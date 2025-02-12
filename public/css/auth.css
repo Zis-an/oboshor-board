@@ -1,0 +1,12 @@
+.auth-left{
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+}
+
+.main-wrapper{
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

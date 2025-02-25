@@ -22,12 +22,12 @@
                     </form>
                 </div>
 
-                {{-- <a href="{{ route('arrange-expense-head-item', $type) }}" target="_blank" class="btn btn-info">Arrange Table
-                    Head</a> --}}
+                <a href="{{ route('arrange-expense-head-item', $type) }}" class="btn btn-info">Arrange Table
+                    Head</a>
 
 
                 <button class="btn btn-primary create-modal-open-btn"
-                    data-href="{{ route('head-items.create', ['type' => $type]) }}">
+                        data-href="{{ route('head-items.create', ['type' => $type]) }}">
                     <i class="fa fa-plus"></i>
                     Create
                 </button>
@@ -39,12 +39,12 @@
         <div class="card-body">
             <table class="w-100 table" id="headItemTable">
                 <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Head</th>
-                        <th>Description</th>
-                        <th>Actions</th>
-                    </tr>
+                <tr>
+                    <th>Name</th>
+                    <th>Head</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
                 </thead>
             </table>
 
@@ -110,8 +110,8 @@
                     searchable: false,
                 }],
                 columns: [{
-                        data: 'name'
-                    },
+                    data: 'name'
+                },
                     {
                         data: 'head.name'
                     },

@@ -21,14 +21,12 @@ use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\DataTables;
 use Mpdf\Mpdf;
 
-class ReportController extends ParentController
-{
+class ReportController extends ParentController {
 
     private $financialYear;
     private $financialYearRange;
 
-    function __construct()
-    {
+    function __construct() {
         ini_set('memory_limit', '2048M');
         ini_set("pcre.backtrack_limit", "5000000");
         $setting = Setting::first();
@@ -39,8 +37,7 @@ class ReportController extends ParentController
         }
     }
 
-    function bankReport()
-    {
+    function bankReport() {
 
         $accounts = Account::getAccounts();
 
@@ -50,9 +47,9 @@ class ReportController extends ParentController
             $account_id = \request()->input('account_id');
 
             $query = Transaction::with('account')->join('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
-                ->join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->whereNotNull('lot_item_id')
-                ->select('transactions.id', 'transactions.date', 'transactions.amount', 'lots.lot_number', 'lot_items.index');
+                    ->join('lots', 'lots.id', '=', 'lot_items.lot_id')
+                    ->whereNotNull('lot_item_id')
+                    ->select('transactions.id', 'transactions.date', 'transactions.amount', 'lots.lot_number', 'lot_items.index');
 
             if (!empty($account_id)) {
                 $query->where('transactions.account_id', $account_id);
@@ -66,61 +63,61 @@ class ReportController extends ParentController
             //before balance
 
             $balanceUntilDate = Transaction::
-            select([
-                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-                ->whereDate('date', '<', $dateRange[0])
-                ->where('status', 'final')
-                ->orderBy('date')
-                ->first()->balance;
+                            select([
+                                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                            ->whereDate('date', '<', $dateRange[0])
+                            ->where('status', 'final')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             $bankCharge = Transaction::
-            //where('account_id', $accountId)
-            select([
-                DB::raw('SUM(amount) as balance')])
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final')
-                ->where('type', 'service-charge')
-                ->where('account_type', 'debit')
-                ->orderBy('date')
-                ->first()->balance;
+                            //where('account_id', $accountId)
+                            select([
+                                DB::raw('SUM(amount) as balance')])
+                            ->whereBetween('date', $dateRange)
+                            ->where('status', 'final')
+                            ->where('type', 'service-charge')
+                            ->where('account_type', 'debit')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             //all debit except service charge and lot items
             $totalExpense = Transaction::
-            //where('account_id', $accountId)
-            select([
-                DB::raw('SUM(amount) as balance')])
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final')
-                ->where('type', '!', 'service-charge')
-                ->whereNull('lot_item_id')
-                ->where('account_type', 'debit')
-                ->orderBy('date')
-                ->first()->balance;
+                            //where('account_id', $accountId)
+                            select([
+                                DB::raw('SUM(amount) as balance')])
+                            ->whereBetween('date', $dateRange)
+                            ->where('status', 'final')
+                            ->where('type', '!', 'service-charge')
+                            ->whereNull('lot_item_id')
+                            ->where('account_type', 'debit')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             $totalIncome = Transaction::
-            //where('account_id', $accountId)
-            select([
-                DB::raw('SUM(amount) as balance')])
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final')
-                ->where('type', 'income')
-                ->orderBy('date')
-                ->first()->balance;
+                            //where('account_id', $accountId)
+                            select([
+                                DB::raw('SUM(amount) as balance')])
+                            ->whereBetween('date', $dateRange)
+                            ->where('status', 'final')
+                            ->where('type', 'income')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             //Lot return
 
             $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->where('lot_items.status', 'returned')
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    ->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->where('lot_items.status', 'returned')
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotReturnsQuery->where('transactions.account_id', $account_id);
             }
 
             $transactionQuery = Transaction::orderBy('date')
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final');
+                    ->whereBetween('date', $dateRange)
+                    ->where('status', 'final');
 
             if (!empty($account_id)) {
                 $transactionQuery->where('transactions.account_id', $account_id);
@@ -133,8 +130,8 @@ class ReportController extends ParentController
             $accountBook = $lotTableData;
 
             $lotTable = view('report.bank-report-table', compact('bankCharge', 'totalExpense', 'totalIncome', 'transactions', 'lotReturns'))
-                ->with(['data' => $lotTableData, 'accountBook' => $accountBook])
-                ->render();
+                    ->with(['data' => $lotTableData, 'accountBook' => $accountBook])
+                    ->render();
 
             return response()->json(['lotTable' => $lotTable]);
         }
@@ -142,8 +139,7 @@ class ReportController extends ParentController
         return view('report.bank-report', compact('accounts'));
     }
 
-    function incomeReport()
-    {
+    function incomeReport() {
 
         if (\request()->ajax()) {
 
@@ -154,12 +150,12 @@ class ReportController extends ParentController
             $dateRange = explode('~', $date);
 
             $incomes = Transaction::leftJoin("head_items", 'head_items.id', '=', 'transactions.head_item_id')
-                ->where("account_type", 'credit')
-                ->whereNotNull("transactions.head_id")
-                ->where('status', 'final')
-                ->whereBetween('date', $dateRange)
-                ->select('transactions.*', 'head_items.name as item_name')
-                ->orderBy('date', 'desc');
+                    ->where("account_type", 'credit')
+                    ->whereNotNull("transactions.head_id")
+                    ->where('status', 'final')
+                    ->whereBetween('date', $dateRange)
+                    ->select('transactions.*', 'head_items.name as item_name')
+                    ->orderBy('date', 'desc');
 
             if (!empty($head_id)) {
                 $incomes->where('transactions.head_id', $head_id);
@@ -187,13 +183,98 @@ class ReportController extends ParentController
         }
 
         $incomeHeads = Head::where("type", 'income')
-            ->pluck('name', 'id');
+                ->pluck('name', 'id');
 
         return view('report.income.report', compact('incomeHeads'));
     }
 
-    function incomeReportExport()
-    {
+    function incomeSubDetails($type, $acc_id, $dateRange) {
+        $accounts = '';
+        $banks = Account::select('accounts.*', 'banks.short', 'branches.name AS br_name')
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', $acc_id)
+                ->first();
+        if ($type == 'te_six') {
+            $accounts = Transaction::where('account_id', $acc_id)
+                    ->where('status', 'final')
+                    ->where('account_type', 'credit')
+                    ->where('head_id', 7)
+                    ->where('head_item_id', 110)
+                    ->when($dateRange, function ($query) use ($dateRange) {
+                        // Split the date range into fromDate and toDate
+                        [$fromDate, $toDate] = explode('~', $dateRange);
+
+                        // Apply the date range filter
+                        $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
+                    })
+                    ->get();
+        }
+        if ($type == 'others') {
+            $accounts = Transaction::where('account_id', $acc_id)
+                    ->where('status', 'final')
+                    ->where('account_type', 'credit')
+                    ->where('type', 'transfer_from')
+                    ->when($dateRange, function ($query) use ($dateRange) {
+                        // Split the date range into fromDate and toDate
+                        [$fromDate, $toDate] = explode('~', $dateRange);
+
+                        // Apply the date range filter
+                        $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
+                    })
+                    ->get();
+        }
+
+
+        if ($type == 'seventyfive') {
+            $accounts = Transaction::where('account_id', $acc_id)
+                    ->where('head_id', 4)
+                    ->where('head_item_id', 107)
+                    ->where('status', 'final')
+                    ->where('account_type', 'credit')
+                    ->when($dateRange, function ($query) use ($dateRange) {
+                        // Split the date range into fromDate and toDate
+                        [$fromDate, $toDate] = explode('~', $dateRange);
+
+                        // Apply the date range filter
+                        $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
+                    })
+                    ->get();
+        }
+
+        if ($type == 'govt') {
+            $accounts = Transaction::where('account_id', $acc_id)
+                    ->where('head_id', 8)
+                    ->where('status', 'final')
+                    ->where('account_type', 'credit')
+                    ->when($dateRange, function ($query) use ($dateRange) {
+                        // Split the date range into fromDate and toDate
+                        [$fromDate, $toDate] = explode('~', $dateRange);
+
+                        // Apply the date range filter
+                        $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
+                    })
+                    ->get();
+        }
+
+        if ($type == 'return') {
+            $accounts = Transaction::where('account_id', $acc_id)
+                    ->where('status', 'final')
+                    ->where('account_type', 'credit')
+                    ->where('type', 'returned')
+                    ->when($dateRange, function ($query) use ($dateRange) {
+                        // Split the date range into fromDate and toDate
+                        [$fromDate, $toDate] = explode('~', $dateRange);
+
+                        // Apply the date range filter
+                        $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
+                    })
+                    ->get();
+        }
+        return view('report.std-account.incomesubdetails', compact('accounts', 'banks'));
+    }
+
+    function incomeReportExport() {
 
 
         $date = \request()->input('date');
@@ -203,13 +284,13 @@ class ReportController extends ParentController
         $dateRange = explode('~', $date);
 
         $incomes = Transaction::leftJoin("head_items", 'head_items.id', '=', 'transactions.head_item_id')
-            ->leftJoin('accounts', 'accounts.id', '=', 'transactions.account_id')
-            ->where("account_type", 'credit')
-            ->whereNotNull("transactions.head_id")
-            ->where('status', 'final')
-            ->whereBetween('date', $dateRange)
-            ->select('transactions.*', 'head_items.name as item_name', 'accounts.account_no AS bankAccount')
-            ->orderBy('date', 'desc');
+                ->leftJoin('accounts', 'accounts.id', '=', 'transactions.account_id')
+                ->where("account_type", 'credit')
+                ->whereNotNull("transactions.head_id")
+                ->where('status', 'final')
+                ->whereBetween('date', $dateRange)
+                ->select('transactions.*', 'head_items.name as item_name', 'accounts.account_no AS bankAccount')
+                ->orderBy('date', 'desc');
 
         $head_item = '';
         $head_sub_iteem = '';
@@ -233,12 +314,11 @@ class ReportController extends ParentController
         $data['head_item'] = $head_item;
         $data['head_sub_item'] = $head_sub_iteem;
 
-
         $type = \request()->input("type");
 
         if ($type == 'pdf') {
 //            $pdf = PDF::loadView('report.income.export', $data);
-//            $fileName = 'income_report_' . now()->format('Y-m-d H:i:s') . '.pdf';
+//            $fileName = 'income_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
 //            return $pdf->stream($fileName,);
 
 
@@ -255,13 +335,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'orientation' => 'L',
@@ -273,15 +353,15 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . \Carbon\Carbon::now('Asia/Dhaka')->format('d/m/Y h:i A') . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('income_report_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('income_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'income_report_' . now()->format('Y-m-d H:i:s') . '.xlsx';
-            return Excel::download(new ReportExport('report.income.export', $data), $fileName, '');
+            $fileName = '6percent_income_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d_H:i:s') . '.xlsx';
+            return Excel::download(new ReportExport('report.income.export', $data), $fileName, \Maatwebsite\Excel\Excel::XLSX);
         }
 
         return "<h4>this export type is not supported</h4>";
@@ -289,8 +369,7 @@ class ReportController extends ParentController
         return view("report.income.table", compact('incomes', 'total'));
     }
 
-    function employeePaymentReport(Request $request)
-    {
+    function employeePaymentReport(Request $request) {
 
         if (\request()->ajax()) {
 
@@ -299,9 +378,9 @@ class ReportController extends ParentController
             $date = $request->input('account_id');
 
             $query = Transaction::with('account')->join('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
-                ->join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->whereNotNull('lot_item_id')
-                ->select('transactions.id', 'transactions.date', 'transactions.amount', 'lots.lot_number', 'lot_items.index');
+                    ->join('lots', 'lots.id', '=', 'lot_items.lot_id')
+                    ->whereNotNull('lot_item_id')
+                    ->select('transactions.id', 'transactions.date', 'transactions.amount', 'lots.lot_number', 'lot_items.index');
 
             if (!empty($account_id)) {
                 $query->where('transactions.account_id', $account_id);
@@ -311,14 +390,13 @@ class ReportController extends ParentController
             $query->whereBetween('transactions.date', [$dateRange[0], $dateRange[1]]);
 
             DataTables::of($query)
-                ->make(true);
+                    ->make(true);
         }
 
         return view('report.employee-payment-report');
     }
 
-    function expenseReport()
-    {
+    function expenseReport() {
 
         $query = '';
 
@@ -331,12 +409,12 @@ class ReportController extends ParentController
             $dateRange = explode('~', $date);
 
             $query = Transaction::with(['transactionFor', 'expenseItems' => function ($query) {
-                $query->with('head', 'headItem');
-            }])
-                ->where('type', 'expense')
-                ->whereDate('date', '>=', $dateRange[0])
-                ->whereDate('date', '<=', $dateRange[1])
-                ->orderBy('date');
+                            $query->with('head', 'headItem');
+                        }])
+                    ->where('type', 'expense')
+                    ->whereDate('date', '>=', $dateRange[0])
+                    ->whereDate('date', '<=', $dateRange[1])
+                    ->orderBy('date');
 
             //if exportable
 
@@ -356,28 +434,28 @@ class ReportController extends ParentController
             }
 
             return DataTables::of($query)
-                ->addColumn('for', function ($row) {
-                    return $row->transactionFor->name ?? '';
-                })
-                ->addColumn('title', function ($row) {
-                    if (!empty($row->expenseItems)) {
-                        $headName = $row->expenseItems->pluck('head.name')->join(', ');
-                        $headItem = $row->expenseItems->pluck('headItem.name')->join(',');
+                            ->addColumn('for', function ($row) {
+                                return $row->transactionFor->name ?? '';
+                            })
+                            ->addColumn('title', function ($row) {
+                                if (!empty($row->expenseItems)) {
+                                    $headName = $row->expenseItems->pluck('head.name')->join(', ');
+                                    $headItem = $row->expenseItems->pluck('headItem.name')->join(',');
 
-                        return $headItem ?? $headName;
-                    }
+                                    return $headItem ?? $headName;
+                                }
 
-                    return '';
-                })
-                ->make(true);
+                                return '';
+                            })
+                            ->make(true);
         }
 
 
         return view('report.expense-report');
     }
 
-    function fdrReport()
-    {
+    function fdrReport() {
+
 
         if (\request()->ajax()) {
 
@@ -389,33 +467,32 @@ class ReportController extends ParentController
             $endDate = $dateRange[1];
 
             $accountTransactions = Account::with(['bank', 'branch'])->select('accounts.*',
-                DB::raw("(SELECT SUM(IF(account_type='credit', amount, -1*amount)) FROM transactions where accounts.id = transactions.account_id) as balance"),
-                DB::raw("(SELECT SUM(amount) FROM transactions where accounts.id = transactions.account_id AND account_type = 'credit' AND transactions.date BETWEEN ? AND ?) as income",),
-                DB::raw("(SELECT SUM(amount) FROM transactions where accounts.id = transactions.account_id AND account_type = 'debit' AND transactions.date BETWEEN ? AND ?) as expense"
-                ))
-                ->setBindings([$startDate, $endDate, $startDate, $endDate]);
+                            DB::raw("(SELECT SUM(IF(account_type='credit', amount, -1*amount)) FROM transactions where accounts.id = transactions.account_id) as balance"),
+                            DB::raw("(SELECT SUM(amount) FROM transactions where accounts.id = transactions.account_id AND account_type = 'credit' AND transactions.date BETWEEN ? AND ?) as income",),
+                            DB::raw("(SELECT SUM(amount) FROM transactions where accounts.id = transactions.account_id AND account_type = 'debit' AND transactions.date BETWEEN ? AND ?) as expense"
+                            ))
+                    ->setBindings([$startDate, $endDate, $startDate, $endDate]);
 
             return \Yajra\DataTables\Facades\DataTables::of($accountTransactions)
-                ->editColumn('balance', function ($row) {
-                    return number_format($row->balance, 2);
-                })
-                ->editColumn('status', function ($row) {
+                            ->editColumn('balance', function ($row) {
+                                return number_format($row->balance, 2);
+                            })
+                            ->editColumn('status', function ($row) {
 
-                    if ($row->closed_at) {
-                        return "<span class='badge badge-warning'>Closed</span>";
-                    } else {
-                        return "<span class='badge badge-success'>Active</span>";
-                    }
-                })
-                ->rawColumns(['actions', 'status'])
-                ->make(true);
+                                if ($row->closed_at) {
+                                    return "<span class='badge badge-warning'>Closed</span>";
+                                } else {
+                                    return "<span class='badge badge-success'>Active</span>";
+                                }
+                            })
+                            ->rawColumns(['actions', 'status'])
+                            ->make(true);
         }
 
         return view("report.fdr-report");
     }
 
-    function bankCashbookReport()
-    {
+    function bankCashbookReport() {
 
         if (\request()->ajax()) {
 
@@ -429,31 +506,31 @@ class ReportController extends ParentController
             $account_id = \request()->input('account_id');
 
             $openingBalance = Transaction::
-            where('account_id', $account_id)
-                ->select([
-                    DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-                ->whereDate('date', '<', $dateRange[0])
-                ->where('status', 'final')
-                ->orderBy('date')
-                ->first()->balance;
+                            where('account_id', $account_id)
+                            ->select([
+                                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                            ->whereDate('date', '<', $dateRange[0])
+                            ->where('status', 'final')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             $transactionQuery = Transaction::orderBy('date')
-                ->with(["head", 'headItem', 'expenseItems' => function ($query) {
-                    $query->with('head', 'headItem');
-                }])
-                ->leftJoin('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
-                ->leftJoin('lots', 'lots.id', '=', 'lot_items.lot_id')
+                    ->with(["head", 'headItem', 'expenseItems' => function ($query) {
+                            $query->with('head', 'headItem');
+                        }])
+                    ->leftJoin('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
+                    ->leftJoin('lots', 'lots.id', '=', 'lot_items.lot_id')
 //                    ->whereBetween('transactions.date', $dateRange)
-                ->whereDate('transactions.date', '>=', $dateRange[0])
-                ->whereDate('transactions.date', '<=', $dateRange[1])
-                ->where('transactions.status', 'final')
-                ->select('transactions.id', 'transactions.date',
+                    ->whereDate('transactions.date', '>=', $dateRange[0])
+                    ->whereDate('transactions.date', '<=', $dateRange[1])
+                    ->where('transactions.status', 'final')
+                    ->select('transactions.id', 'transactions.date',
                     'transactions.amount', 'transactions.account_type',
                     'transactions.lot_item_id',
                     'transactions.head_id',
                     'transactions.head_item_id',
                     'lot_items.index', 'lots.name as lot_name', 'lots.short_name as short_name', 'lots.file_page as file_page', 'transactions.description',
-                );
+            );
 
             if (!empty($account_id)) {
                 $transactionQuery->where('transactions.account_id', $account_id);
@@ -462,10 +539,10 @@ class ReportController extends ParentController
             $transactions = $transactionQuery->get();
 
             $accounts_details = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-                ->leftJoin('banks', 'banks.id', '=', 'accounts.bank_id')
-                ->leftJoin('branches', 'branches.id', '=', 'accounts.branch_id')
-                ->where('accounts.id', $account_id)
-                ->first();
+                    ->leftJoin('banks', 'banks.id', '=', 'accounts.bank_id')
+                    ->leftJoin('branches', 'branches.id', '=', 'accounts.branch_id')
+                    ->where('accounts.id', $account_id)
+                    ->first();
 
             return view("report.bank.cashbook.table", compact('transactions', 'openingBalance', 'start', 'end', 'accounts_details'));
         }
@@ -473,14 +550,13 @@ class ReportController extends ParentController
         $accounts = Account::getAccounts();
 
         $pettyCashAccount = Account::where('is_cash_account', true)
-            ->first();
+                ->first();
 
         return view('report.bank.cashbook.report', compact('accounts', 'pettyCashAccount')
-        )->with(['financialYearRange' => $this->financialYearRange]);
+                )->with(['financialYearRange' => $this->financialYearRange]);
     }
 
-    function bankCashBookReportExportPDF()
-    {
+    function bankCashBookReportExportPDF() {
         $date = \request()->input('date');
 
         $dateRange = explode('~', $date);
@@ -492,37 +568,37 @@ class ReportController extends ParentController
         $account_id = \request()->input('account');
 
         $accounts_details = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->leftJoin('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->leftJoin('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', $account_id)
-            ->first();
+                ->leftJoin('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->leftJoin('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', $account_id)
+                ->first();
 
         $openingBalance = Transaction::
-        where('account_id', $account_id)
-            ->select([
-                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-            ->whereDate('date', '<', $dateRange[0])
-            ->where('status', 'final')
-            ->orderBy('date')
-            ->first()->balance;
+                        where('account_id', $account_id)
+                        ->select([
+                            DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                        ->whereDate('date', '<', $dateRange[0])
+                        ->where('status', 'final')
+                        ->orderBy('date')
+                        ->first()->balance;
 
         $transactionQuery = Transaction::orderBy('date')
-            ->with(["head", 'headItem', 'expenseItems' => function ($query) {
-                $query->with('head', 'headItem');
-            }])
-            ->leftJoin('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
-            ->leftJoin('lots', 'lots.id', '=', 'lot_items.lot_id')
+                ->with(["head", 'headItem', 'expenseItems' => function ($query) {
+                        $query->with('head', 'headItem');
+                    }])
+                ->leftJoin('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
+                ->leftJoin('lots', 'lots.id', '=', 'lot_items.lot_id')
 //                ->whereBetween('transactions.date', $dateRange)
-            ->whereDate('transactions.date', '>=', $start)
-            ->whereDate('transactions.date', '<=', $end)
-            ->where('transactions.status', 'final')
-            ->select('transactions.id', 'transactions.date',
+                ->whereDate('transactions.date', '>=', $start)
+                ->whereDate('transactions.date', '<=', $end)
+                ->where('transactions.status', 'final')
+                ->select('transactions.id', 'transactions.date',
                 'transactions.amount', 'transactions.account_type',
                 'transactions.lot_item_id',
                 'transactions.head_id', 'transactions.head_item_id',
                 'transactions.type',
                 'lot_items.index', 'lots.name as lot_name', 'lots.short_name as short_name', 'lots.file_page as file_page', 'transactions.description',
-            );
+        );
 
         if (!empty($account_id)) {
             $transactionQuery->where('transactions.account_id', $account_id);
@@ -532,7 +608,7 @@ class ReportController extends ParentController
 
         $setting = Setting::first();
         $financialYear = FinancialYear::where('id', $setting->active_financial_year_id)
-            ->first();
+                ->first();
 
         $totalDebit = $transactions->where('account_type', 'debit')->sum('amount');
         $totalCredit = $transactions->where('account_type', 'credit')->sum('amount');
@@ -564,13 +640,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -581,34 +657,40 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . \Carbon\Carbon::now('Asia/Dhaka')->format('d/m/Y h:i A') . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('cashbook' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('cashbook' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'cashbook' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'cashbook' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new CashbookReportExport($data), $fileName);
         }
 
         return "<h4>this export type is not supported</h4>";
     }
 
-    function holdItemsReport()
-    {
+    function holdItemsReport() {
 
         if (\request()->ajax()) {
 
             $account_id = \request()->input('account_id');
+            $financialYearId = \request()->input('financial_year_id', null);
+            if (isset($financialYearId) && !empty($financialYearId)) {
+                $financialYear = FinancialYear::findOrFail($financialYearId);
+            }
 
             $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->where('lot_items.status', 'hold')
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->where('lot_items.status', 'hold')
+                    ->select('lots.name as lot_name', 'lots.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotReturnsQuery->where('lots.account_id', $account_id);
+            }
+            if (isset($financialYearId) && !empty($financialYear)) {
+                $lotReturnsQuery->whereBetween("lots.date", [$financialYear->start_date, $financialYear->end_date . ' 23:59:59']);
             }
 
             $items = $lotReturnsQuery->get();
@@ -618,21 +700,20 @@ class ReportController extends ParentController
 
 
         $accounts = Account::getAccounts();
-
-        return view("report.bank.hold.report", compact('accounts'));
+        $financialYears = FinancialYear::getForDropdown();
+        return view("report.bank.hold.report", compact('accounts', 'financialYears'));
     }
 
-    function stopItemsReport()
-    {
+    function stopItemsReport() {
 
         if (\request()->ajax()) {
 
             $account_id = \request()->input('account_id');
 
             $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->where('lot_items.status', 'stop')
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->where('lot_items.status', 'stop')
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -649,25 +730,32 @@ class ReportController extends ParentController
         return view("report.bank.stop.report", compact('accounts'));
     }
 
-    function bankHoldReportExport()
-    {
+    function bankHoldReportExport() {
 
         $account_id = \request()->input('account');
+        
+        $financialYearId = \request()->input('fisc_year_id', null);
+            if (isset($financialYearId) && !empty($financialYearId)) {
+                $financialYear = FinancialYear::findOrFail($financialYearId);
+            }
 
         $account = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->join('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->join('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', '=', $account_id)
-            ->first();
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', '=', $account_id)
+                ->first();
 
         $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->where('lot_items.status', 'hold')
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->where('lot_items.status', 'hold')
+                ->select('lots.name as lot_name', 'lots.date as lot_date', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotReturnsQuery->where('lots.account_id', $account_id);
         }
+        if (isset($financialYearId) && !empty($financialYear)) {
+                $lotReturnsQuery->whereBetween("lots.date", [$financialYear->start_date, $financialYear->end_date . ' 23:59:59']);
+            }
 
         $items = $lotReturnsQuery->get();
 
@@ -690,13 +778,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -706,35 +794,34 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now()->setTimezone('Asia/Dhaka'))) . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('stop-report_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('stop-report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'hold-report' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'hold-report' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank.hold.export', $data), $fileName);
         }
 
         return "<h4>this export type is not supported</h4>";
     }
 
-    function exportStopItemsReport()
-    {
+    function exportStopItemsReport() {
 
         $account_id = \request()->input('account');
         $account = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->join('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->join('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', '=', $account_id)
-            ->first();
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', '=', $account_id)
+                ->first();
 //        dd($account_id);
 
         $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->where('lot_items.status', 'stop')
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->where('lot_items.status', 'stop')
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -762,13 +849,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -778,22 +865,21 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . \Carbon\Carbon::now('Asia/Dhaka')->format('d/m/Y h:i A') . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('stop-report_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('stop-report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'stop-report' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'stop-report' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank.hold.export', $data), $fileName);
         }
 
         return "<h4>this export type is not supported</h4>";
     }
 
-    function paymentItemsReport()
-    {
+    function paymentItemsReport() {
 
         if (\request()->ajax()) {
 
@@ -804,35 +890,64 @@ class ReportController extends ParentController
 
             $end = $dateRange[1];
 
+//            $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
+//                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+//                    ->whereDate('transactions.date', '>=', '2022-07-01')
+//                    ->whereDate('transactions.date', '<=', $dateRange[1])
+//                    ->where('transactions.account_type', '=', 'credit')
+//                    ->groupBy('transactions.lot_item_id');
+//
+//            if (!empty($account_id)) {
+//                $lotTreanReturn->where('lots.account_id', $account_id);
+//            }
+//
+//            $returnItems = $lotTreanReturn->pluck('lot_items.index')->toArray();
+            
             $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
                 ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('transactions.date', '>=', '2022-07-01')
-                ->whereDate('transactions.date', '<=', $dateRange[1])
-                ->where('transactions.account_type', '=', 'credit')
-                ->groupBy('transactions.lot_item_id');
+                ->whereDate('transactions.date', '>=', $dateRange[0] . ' 00:00:00')
+                ->whereDate('transactions.date', '<=', $dateRange[1] . ' 23:59:59')
+                ->groupBy('transactions.lot_item_id')
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                ->havingRaw('count % 2 = 0');
 
-            if (!empty($account_id)) {
-                $lotTreanReturn->where('lots.account_id', $account_id);
-            }
+        if (!empty($account_id)) {
+            $lotTreanReturn->where('lots.account_id', $account_id);
+        }
 
-            $returnItems = $lotTreanReturn->pluck('lot_items.index')->toArray();
+        $returnItems = $lotTreanReturn->pluck('lot_items.index')->toArray();
 
+//            $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
+//                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+//                    ->whereDate('transactions.date', '>=', $dateRange[0])
+//                    ->whereDate('transactions.date', '<=', $dateRange[1])
+//                    ->where('transactions.account_type', '=', 'debit')
+//                    ->groupBy('transactions.lot_item_id')
+////                    ->orderBy('transactions.date', 'ASC')
+//                    ->select('lots.short_name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'transactions.date AS paymDate');
+//
+//            if (!empty($account_id)) {
+//                $lotTreanQuery->where('lots.account_id', $account_id);
+//            }
+
+//            $prossItems = $lotTreanQuery->get();
+            
+            
             $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
                 ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
                 ->whereDate('transactions.date', '>=', $dateRange[0])
                 ->whereDate('transactions.date', '<=', $dateRange[1])
                 ->where('transactions.account_type', '=', 'debit')
                 ->groupBy('transactions.lot_item_id')
-//                    ->orderBy('transactions.date', 'ASC')
                 ->select('lots.short_name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'transactions.date AS paymDate');
 
-            if (!empty($account_id)) {
-                $lotTreanQuery->where('lots.account_id', $account_id);
-            }
+        if (!empty($account_id)) {
+            $lotTreanQuery->where('lots.account_id', $account_id);
+        }
 
-            $prossItems = $lotTreanQuery->get();
+        $prossItems = $lotTreanQuery->get();
 
-            return view("report.bank.payment.table", compact('end', 'prossItems', 'returnItems'));
+            return view("report.bank.payment.table", compact('end', 'prossItems', 'returnItems', 'lotTreanReturn'));
         }
 
         $accounts = Account::getAccounts();
@@ -840,8 +955,7 @@ class ReportController extends ParentController
         return view("report.bank.payment.report", compact('accounts'))->with(['financialYearRange' => $this->financialYearRange]);
     }
 
-    function exportPaymentItemsReport()
-    {
+    function exportPaymentItemsReport() {
         $account_id = \request()->input('account');
         $date = \request()->input('date');
 
@@ -851,10 +965,10 @@ class ReportController extends ParentController
         $end = $dateRange[1];
 
         $account = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->join('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->join('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', '=', $account_id)
-            ->first();
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', '=', $account_id)
+                ->first();
 
 //        $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
 //            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
@@ -871,12 +985,12 @@ class ReportController extends ParentController
 
 
         $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('transactions.date', '>=', $dateRange[0] . ' 00:00:00')
-            ->whereDate('transactions.date', '<=', $dateRange[1] . ' 23:59:59')
-            ->groupBy('transactions.lot_item_id')
-            ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
-            ->havingRaw('count % 2 = 0');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0] . ' 00:00:00')
+                ->whereDate('transactions.date', '<=', $dateRange[1] . ' 23:59:59')
+                ->groupBy('transactions.lot_item_id')
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                ->havingRaw('count % 2 = 0');
 
         if (!empty($account_id)) {
             $lotTreanReturn->where('lots.account_id', $account_id);
@@ -886,19 +1000,19 @@ class ReportController extends ParentController
 //dd($lotTreanReturn->get());
 
         $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('transactions.date', '>=', $dateRange[0])
-            ->whereDate('transactions.date', '<=', $dateRange[1])
-            ->where('transactions.account_type', '=', 'debit')
-            ->groupBy('transactions.lot_item_id')
-            ->select('lots.short_name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'transactions.date AS paymDate');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0] . ' 00:00:00')
+                ->whereDate('transactions.date', '<=', $dateRange[1] . ' 23:59:59')
+                ->where('transactions.account_type', '=', 'debit')
+                ->groupBy('transactions.lot_item_id')
+                ->select('lots.short_name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'transactions.date AS paymDate');
 
         if (!empty($account_id)) {
             $lotTreanQuery->where('lots.account_id', $account_id);
         }
 
         $prossItems = $lotTreanQuery->get();
-//        dd($prossItems);
+//        dd($prossItems->count() - $lotTreanReturn->count());
 
         $data['prossItems'] = $prossItems;
 
@@ -906,13 +1020,15 @@ class ReportController extends ParentController
         $data['start'] = $start;
         $data['account'] = $account;
         $data['returns'] = $returnItems;
+        $data['paidItemtotal'] = $prossItems->count() - $lotTreanReturn->count();
+        $data['paidItemAmount'] = $prossItems->sum('amount') - $lotTreanReturn->sum('amount');
 
         $type = \request()->input('type');
 
         if ($type == 'pdf') {
 
 //            $pdf = PDF::loadView('report.bank.payment.export', $data);
-//            $fileName = 'payment_report_' . now()->format('Y-m-d H:i:s') . '.pdf';
+//            $fileName = 'payment_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
 //            return $pdf->stream($fileName);
 
             $html = view('report.bank.payment.export', $data);
@@ -928,13 +1044,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -944,22 +1060,21 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . \Carbon\Carbon::now('Asia/Dhaka')->format('d/m/Y h:i A') . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('payment_report_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('payment_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'payment_report_' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'payment_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank.payment.export', $data), $fileName);
         }
 
         return "<h4>this export type is not supported</h4>";
     }
 
-    function pendingItemsReport()
-    {
+    function pendingItemsReport() {
 
         if (\request()->ajax()) {
 
@@ -972,11 +1087,11 @@ class ReportController extends ParentController
             $end = $dateRange[1];
 
             $lotProssQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->where('lot_items.status', 'processing')
-                ->whereDate('lots.date', '>=', '2022-07-01')
-                ->whereDate('lots.date', '<=', $end)
-                ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->where('lot_items.status', 'processing')
+                    ->whereDate('lots.date', '>=', '2022-07-01')
+                    ->whereDate('lots.date', '<=', $end)
+                    ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotProssQuery->where('lots.account_id', $account_id);
@@ -985,12 +1100,12 @@ class ReportController extends ParentController
             $prossItems = $lotProssQuery->get();
 
             $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('lots.date', '<=', $end)
-                ->whereDate('transactions.date', '>', $end)
-                ->where('transactions.account_type', '=', 'debit')
-                ->groupBy('transactions.lot_item_id')
-                ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->whereDate('lots.date', '<=', $end)
+                    ->whereDate('transactions.date', '>', $end)
+                    ->where('transactions.account_type', '=', 'debit')
+                    ->groupBy('transactions.lot_item_id')
+                    ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotTreanQuery->where('lots.account_id', $account_id);
@@ -999,10 +1114,10 @@ class ReportController extends ParentController
             $transac = $lotTreanQuery->get();
 
             $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->groupBy('transactions.lot_item_id')
-                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId')
-                ->havingRaw('count % 2 = 0');
+                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->groupBy('transactions.lot_item_id')
+                    ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId')
+                    ->havingRaw('count % 2 = 0');
 
             if (!empty($account_id)) {
                 $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -1018,8 +1133,7 @@ class ReportController extends ParentController
         return view("report.bank.pending.report", compact('accounts'))->with(['financialYearRange' => $this->financialYearRange]);
     }
 
-    function exportPendingItemsReport()
-    {
+    function exportPendingItemsReport() {
         $account_id = \request()->input('account');
         $date = \request()->input('date');
 
@@ -1029,18 +1143,18 @@ class ReportController extends ParentController
         $end = $dateRange[1];
 
         $account = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->join('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->join('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', '=', $account_id)
-            ->first();
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', '=', $account_id)
+                ->first();
 
         //Pending data query
         $lotProssQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->where('lot_items.status', 'processing')
-            ->whereDate('lots.date', '>=', '2022-07-01')
-            ->whereDate('lots.date', '<=', $end)
-            ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->where('lot_items.status', 'processing')
+                ->whereDate('lots.date', '>=', '2022-07-01')
+                ->whereDate('lots.date', '<=', $end)
+                ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotProssQuery->where('lots.account_id', $account_id);
@@ -1051,12 +1165,12 @@ class ReportController extends ParentController
         $data['prossItems'] = $prossItems;
 
         $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('lots.date', '<=', $end)
-            ->whereDate('transactions.date', '>', $end)
-            ->where('transactions.account_type', '=', 'debit')
-            ->groupBy('transactions.lot_item_id')
-            ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('lots.date', '<=', $end)
+                ->whereDate('transactions.date', '>', $end)
+                ->where('transactions.account_type', '=', 'debit')
+                ->groupBy('transactions.lot_item_id')
+                ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotTreanQuery->where('lots.account_id', $account_id);
@@ -1066,10 +1180,10 @@ class ReportController extends ParentController
         $data['transac'] = $transac;
 
         $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->groupBy('transactions.lot_item_id')
-            ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId')
-            ->havingRaw('count % 2 = 0');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->groupBy('transactions.lot_item_id')
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId')
+                ->havingRaw('count % 2 = 0');
 
         if (!empty($account_id)) {
             $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -1099,13 +1213,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -1115,22 +1229,21 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . \Carbon\Carbon::now('Asia/Dhaka')->format('d/m/Y h:i A') . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('pending_report_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('pending_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'pending_report_' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'pending_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank.pending.export', $data), $fileName);
         }
 
         return "<h4>this export type is not supported</h4>";
     }
 
-    function returnedItemsReport()
-    {
+    function returnedItemsReport() {
 
         if (\request()->ajax()) {
             $date = \request()->input('date');
@@ -1141,20 +1254,19 @@ class ReportController extends ParentController
 
             $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
                 ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('transactions.date', '>=', '2022-07-01')
+                ->whereDate('transactions.date', '>=', $dateRange[0])
                 ->whereDate('transactions.date', '<=', $dateRange[1])
-//                    ->where('transactions.account_type', '=', 'credit')
+//                ->where('transactions.account_type', '=', 'credit')
                 ->groupBy('transactions.lot_item_id')
-//                    ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId', 'transactions.account_type AS TranType', 'transactions.date AS TranDate', 'transactions.id AS TranID')
-//                    ->havingRaw('count % 2 = 0');
+//                ->select('lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
                 ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
                 ->havingRaw('count % 2 = 0');
 
-            if (!empty($account_id)) {
-                $lotTreanReturn->where('lots.account_id', $account_id);
-            }
+        if (!empty($account_id)) {
+            $lotTreanReturn->where('lots.account_id', $account_id);
+        }
 
-            $items = $lotTreanReturn->get();
+        $items = $lotTreanReturn->get();
 
 //            $stop = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
 //                ->whereDate('lot_items.updated_at', '>=', '2022-07-01')
@@ -1200,8 +1312,7 @@ class ReportController extends ParentController
         return view("report.bank.returned.report", compact('accounts'))->with(['financialYearRange' => $this->financialYearRange]);
     }
 
-    function exportReturnedItemsReport()
-    {
+    function exportReturnedItemsReport() {
         $date = \request()->input('date');
 
         $dateRange = explode('~', $date);
@@ -1212,22 +1323,22 @@ class ReportController extends ParentController
         $end = $dateRange[1];
 
         $account = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->join('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->join('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', '=', $account_id)
-            ->first();
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', '=', $account_id)
+                ->first();
 
 //        dd($account_id);
 
         $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('transactions.date', '>=', $dateRange[0])
-            ->whereDate('transactions.date', '<=', $dateRange[1])
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0])
+                ->whereDate('transactions.date', '<=', $dateRange[1])
 //                ->where('transactions.account_type', '=', 'credit')
-            ->groupBy('transactions.lot_item_id')
+                ->groupBy('transactions.lot_item_id')
 //                ->select('lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
-            ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
-            ->havingRaw('count % 2 = 0');
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                ->havingRaw('count % 2 = 0');
 
         if (!empty($account_id)) {
             $lotTreanReturn->where('lots.account_id', $account_id);
@@ -1236,11 +1347,11 @@ class ReportController extends ParentController
         $items = $lotTreanReturn->get();
 
         $stop = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->whereDate('lot_items.updated_at', '>=', '2022-07-01')
-            ->whereDate('lot_items.updated_at', '<=', $dateRange[1])
-            ->where('lot_items.status', 'stop')
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
-            ->get();
+                ->whereDate('lot_items.updated_at', '>=', '2022-07-01')
+                ->whereDate('lot_items.updated_at', '<=', $dateRange[1])
+                ->where('lot_items.status', 'stop')
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                ->get();
 
         $stop_amount = $stop->sum('amount');
         $stop_count = $stop->count();
@@ -1281,7 +1392,7 @@ class ReportController extends ParentController
         if ($type == 'pdf') {
 
 //            $pdf = PDF::loadView('report.bank.returned.export', $data);
-//            $fileName = 'returned_report_' . now()->format('Y-m-d H:i:s') . '.pdf';
+//            $fileName = 'returned_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
 //            return $pdf->stream($fileName);
 
             $html = view('report.bank.returned.export', $data);
@@ -1297,13 +1408,13 @@ class ReportController extends ParentController
                     public_path(),
                 ]),
                 'fontdata' => $fontData + [
-                        'solaimanlipi' => [
-                            'R' => 'fonts/SolaimanLipi.ttf',
-                            'I' => 'fonts/SolaimanLipi.ttf',
-                            'useOTL' => 0xFF,
-                            'useKashida' => 75
-                        ]
-                    ],
+            'solaimanlipi' => [
+                'R' => 'fonts/SolaimanLipi.ttf',
+                'I' => 'fonts/SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75
+            ]
+                ],
                 'default_font' => 'sans-serif',
                 'mode' => 'utf-8',
                 'format' => 'A4',
@@ -1313,22 +1424,21 @@ class ReportController extends ParentController
             $mpdf->SetCreator('Soroar');
             $mpdf->SetHTMLFooter('
                             <div style="text-align: left;"><span class="bn-font" >পাতাঃ</span> {PAGENO}/{nbpg}</div>
-                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now())) . '</div>');
+                            <div style="text-align: left; font-size: 6px;">This Report Auto Generate By TERBB Accouts System on ' . date('d/m/Y H:i A', strtotime(now()->setTimezone('Asia/Dhaka'))) . '</div>');
 
             $mpdf->WriteHTML($html);
-            return $mpdf->Output('returned_report_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
+            return $mpdf->Output('returned_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf', 'I');
         }
 
         if ($type == 'excel') {
-            $fileName = 'returned_report_' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'returned_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank.returned.export', $data), $fileName);
         }
 
         return "<h4>this export type is not supported</h4>";
     }
 
-    function bankWiseReport()
-    {
+    function bankWiseReport() {
 
         if (\request()->ajax()) {
 
@@ -1340,11 +1450,11 @@ class ReportController extends ParentController
             $end = $date[1];
 
             $items = Account::with(['lotItems' => function ($query) use ($start, $end) {
-                $query->whereBetween('lot_items.date', [$start, $end]);
-            }])
-                ->whereHas('lotItems', function ($query) use ($start, $end) {
-                    $query->whereBetween('lot_items.date', [$start, $end]);
-                })->get();
+                                    $query->whereBetween('lot_items.date', [$start, $end]);
+                                }])
+                            ->whereHas('lotItems', function ($query) use ($start, $end) {
+                                $query->whereBetween('lot_items.date', [$start, $end]);
+                            })->get();
 
             return view('report.bank-wise.table', compact('items'));
         }
@@ -1352,8 +1462,7 @@ class ReportController extends ParentController
         return view('report.bank-wise.report');
     }
 
-    function exportBankWiseReport()
-    {
+    function exportBankWiseReport() {
 
 
         $date = \request()->input('date');
@@ -1364,12 +1473,12 @@ class ReportController extends ParentController
         $end = $date[1];
 
         $items = Account::with(['lotItems' => function ($query) use ($start, $end) {
-            $query->whereBetween('lot_items.date', [$start, $end]);
-        }])
-            ->whereHas('lotItems', function ($query) use ($start, $end) {
-                $query->whereBetween('lot_items.date', [$start, $end]);
-            })
-            ->get();
+                        $query->whereBetween('lot_items.date', [$start, $end]);
+                    }])
+                ->whereHas('lotItems', function ($query) use ($start, $end) {
+                    $query->whereBetween('lot_items.date', [$start, $end]);
+                })
+                ->get();
 
         $data['items'] = $items;
         $data['start'] = $start;
@@ -1380,19 +1489,18 @@ class ReportController extends ParentController
         if ($type == 'pdf') {
 
             $pdf = PDF::loadView('report.bank-wise.export', $data);
-            $fileName = 'hold-report' . now()->format('Y-m-d H:i:s') . '.pdf';
+            $fileName = 'hold-report' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
             return $pdf->stream($fileName);
         }
 
         if ($type == 'excel') {
-            $fileName = 'hold-report' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'hold-report' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank-wise.export', $data), $fileName);
         }
         return "invalid export type";
     }
 
-    function lotWiseReport()
-    {
+    function lotWiseReport() {
 
 
         $export = \request()->query('export');
@@ -1427,8 +1535,7 @@ class ReportController extends ParentController
         return view('report.lot-wise.report', compact('accounts'));
     }
 
-    function exportLotWiseReport()
-    {
+    function exportLotWiseReport() {
 
         $date = \request()->input('date');
 
@@ -1442,8 +1549,8 @@ class ReportController extends ParentController
         $end = $date[1];
 
         $lots = Lot::with(['account', 'items'])
-            ->whereBetween('date', $date)
-            ->get();
+                ->whereBetween('date', $date)
+                ->get();
 
         $type = \request()->input('type');
 
@@ -1454,21 +1561,20 @@ class ReportController extends ParentController
         if ($type == 'pdf') {
 
             $pdf = PDF::loadView('report.lot-wise.export', $data)
-                ->setPaper('a4', 'landscape');
-            $fileName = 'hold-report' . now()->format('Y-m-d H:i:s') . '.pdf';
+                    ->setPaper('a4', 'landscape');
+            $fileName = 'hold-report' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
             return $pdf->stream($fileName,);
         }
 
         if ($type == 'excel') {
-            $fileName = 'hold-report' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'hold-report' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.lot-wise.export', $data), $fileName);
         }
 
         return view('report.lot-wise.export', compact('lots', 'start', 'end'));
     }
 
-    function reconciliationReport()
-    {
+    function reconciliationReport() {
 
         $accounts = Account::getAccounts();
 
@@ -1478,9 +1584,9 @@ class ReportController extends ParentController
             $account_id = \request()->input('account_id');
 
             $query = Transaction::with('account')->join('lot_items', 'lot_items.id', '=', 'transactions.lot_item_id')
-                ->join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->whereNotNull('lot_item_id')
-                ->select('transactions.id', 'transactions.date', 'transactions.amount', 'lots.lot_number', 'lot_items.index');
+                    ->join('lots', 'lots.id', '=', 'lot_items.lot_id')
+                    ->whereNotNull('lot_item_id')
+                    ->select('transactions.id', 'transactions.date', 'transactions.amount', 'lots.lot_number', 'lot_items.index');
 
             if (!empty($account_id)) {
                 $query->where('transactions.account_id', $account_id);
@@ -1493,43 +1599,43 @@ class ReportController extends ParentController
             //before balance
 
             $balanceUntilDate = Transaction::
-            where('account_id', $account_id)
-                ->select([
-                    DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-                ->whereDate('date', '<=', $dateRange[1])
-                ->where('status', 'final')
-                ->orderBy('date')
-                ->first()->balance;
+                            where('account_id', $account_id)
+                            ->select([
+                                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                            ->whereDate('date', '<=', $dateRange[1])
+                            ->where('status', 'final')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             $bankCharge = Transaction::
-            //where('account_id', $accountId)
-            select([
-                DB::raw('SUM(amount) as balance')])
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final')
-                ->where('type', 'service-charge')
-                ->where('account_type', 'debit')
-                ->orderBy('date')
-                ->first()->balance;
+                            //where('account_id', $accountId)
+                            select([
+                                DB::raw('SUM(amount) as balance')])
+                            ->whereBetween('date', $dateRange)
+                            ->where('status', 'final')
+                            ->where('type', 'service-charge')
+                            ->where('account_type', 'debit')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             //all debit except service charge and lot items
             $totalExpense = Transaction::
-            //where('account_id', $accountId)
-            select([
-                DB::raw('SUM(amount) as balance')])
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final')
-                ->where('type', '!', 'service-charge')
-                ->whereNull('lot_item_id')
-                ->where('account_type', 'debit')
-                ->orderBy('date')
-                ->first()->balance;
+                            //where('account_id', $accountId)
+                            select([
+                                DB::raw('SUM(amount) as balance')])
+                            ->whereBetween('date', $dateRange)
+                            ->where('status', 'final')
+                            ->where('type', '!', 'service-charge')
+                            ->whereNull('lot_item_id')
+                            ->where('account_type', 'debit')
+                            ->orderBy('date')
+                            ->first()->balance;
 
             //Lot return
 
             $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->whereIn('lot_items.status', ['returned', 'processing'])
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    ->whereIn('lot_items.status', ['returned', 'processing'])
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -1538,10 +1644,10 @@ class ReportController extends ParentController
             //pending Amount start
             $total_pending_amount = 0;
             $lotProssQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->where('lot_items.status', 'processing')
-                ->whereDate('lots.date', '>=', '2022-07-01')
-                ->whereDate('lots.date', '<=', $dateRange[1])
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    ->where('lot_items.status', 'processing')
+                    ->whereDate('lots.date', '>=', '2022-07-01')
+                    ->whereDate('lots.date', '<=', $dateRange[1])
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotProssQuery->where('lots.account_id', $account_id);
@@ -1553,12 +1659,12 @@ class ReportController extends ParentController
 
             $total_pending_amount = $total_pending_amount + $prossItems->sum('amount');
             $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('transactions.date', '>=', $dateRange[0])
-                ->whereDate('transactions.date', '<=', $dateRange[1])
-                ->where('transactions.account_type', '=', 'debit')
-                ->groupBy('transactions.lot_item_id')
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->whereDate('transactions.date', '>=', $dateRange[0])
+                    ->whereDate('transactions.date', '<=', $dateRange[1])
+                    ->where('transactions.account_type', '=', 'debit')
+                    ->groupBy('transactions.lot_item_id')
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotTreanQuery->where('lots.account_id', $account_id);
@@ -1571,12 +1677,12 @@ class ReportController extends ParentController
 
 
             $lotTreanPending = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('lots.date', '<=', $dateRange[1])
-                ->whereDate('transactions.date', '>', $dateRange[1])
-                ->where('transactions.account_type', '=', 'debit')
-                ->groupBy('transactions.lot_item_id')
-                ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->whereDate('lots.date', '<=', $dateRange[1])
+                    ->whereDate('transactions.date', '>', $dateRange[1])
+                    ->where('transactions.account_type', '=', 'debit')
+                    ->groupBy('transactions.lot_item_id')
+                    ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
             if (!empty($account_id)) {
                 $lotTreanPending->where('lots.account_id', $account_id);
@@ -1588,10 +1694,10 @@ class ReportController extends ParentController
             $tranpendCount = $transacPending->count();
 
             $lotOtvutQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->groupBy('transactions.lot_item_id')
-                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId', 'transactions.account_type AS TranType', 'transactions.date AS TranDate', 'transactions.id AS TranID')
-                ->havingRaw('count % 2 = 0');
+                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->groupBy('transactions.lot_item_id')
+                    ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId', 'transactions.account_type AS TranType', 'transactions.date AS TranDate', 'transactions.id AS TranID')
+                    ->havingRaw('count % 2 = 0');
 
             if (!empty($account_id)) {
                 $lotOtvutQuery->where('lots.account_id', $account_id);
@@ -1618,14 +1724,14 @@ class ReportController extends ParentController
 //            return $return_amount;
 
             $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('transactions.date', '>=', '2022-07-01')
-                ->whereDate('transactions.date', '<=', $dateRange[1])
+                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->whereDate('transactions.date', '>=', '2022-07-01')
+                    ->whereDate('transactions.date', '<=', $dateRange[1])
 //                    ->where('transactions.account_type', '=', 'credit')
-                ->groupBy('transactions.lot_item_id')
+                    ->groupBy('transactions.lot_item_id')
 //                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
-                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
-                ->havingRaw('count % 2 = 0');
+                    ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                    ->havingRaw('count % 2 = 0');
 
             if (!empty($account_id)) {
                 $lotTreanReturn->where('lots.account_id', $account_id);
@@ -1636,8 +1742,8 @@ class ReportController extends ParentController
             //Pending amount end
 
             $transactionQuery = Transaction::orderBy('date')
-                ->whereBetween('date', $dateRange)
-                ->where('status', 'final');
+                    ->whereBetween('date', $dateRange)
+                    ->where('status', 'final');
 
             if (!empty($account_id)) {
                 $transactionQuery->where('transactions.account_id', $account_id);
@@ -1647,25 +1753,25 @@ class ReportController extends ParentController
 
             $unpaidAmount = $lotPending->sum('amount');
 
-
             $transactions = $transactionQuery->get();
 
             $hold = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-                ->whereDate('lots.date', '<=', $dateRange[1])
-                ->where('lot_items.status', 'hold')
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
-                ->get();
+                    ->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                    ->whereDate('lots.date', '>=', $dateRange[0])
+                    ->whereDate('lots.date', '<=', $dateRange[1])
+                    ->where('lot_items.status', 'hold')
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                    ->get();
 
             $hold_amount = $hold->sum('amount');
             $hold_count = $hold->count();
 
             $stop = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-                ->whereDate('lot_items.updated_at', '>=', '2022-07-01')
-                ->whereDate('lot_items.updated_at', '<=', $dateRange[1])
-                ->where('lot_items.status', 'stop')
-                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id AS lot_item_id')
-                ->get();
+                    ->whereDate('lot_items.updated_at', '>=', '2022-07-01')
+                    ->whereDate('lot_items.updated_at', '<=', $dateRange[1])
+                    ->where('lot_items.status', 'stop')
+                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id AS lot_item_id')
+                    ->get();
 
             $stop_amount = $stop->sum('amount');
             $stop_count = $stop->count();
@@ -1724,8 +1830,7 @@ class ReportController extends ParentController
         return view('report.bank.reconciliation.report', compact('accounts'));
     }
 
-    function exportReconciliationReport()
-    {
+    function exportReconciliationReport() {
 
         $date = \request()->input('date');
 
@@ -1738,10 +1843,10 @@ class ReportController extends ParentController
 
 //        $account = Account::findOrFail($accountId);
         $account = Account::select('accounts.*', 'banks.name AS bankName', 'branches.name AS branchName')
-            ->join('banks', 'banks.id', '=', 'accounts.bank_id')
-            ->join('branches', 'branches.id', '=', 'accounts.branch_id')
-            ->where('accounts.id', '=', $accountId)
-            ->first();
+                ->join('banks', 'banks.id', '=', 'accounts.bank_id')
+                ->join('branches', 'branches.id', '=', 'accounts.branch_id')
+                ->where('accounts.id', '=', $accountId)
+                ->first();
 //        dd($account);
         //before balance
 
@@ -1763,93 +1868,90 @@ class ReportController extends ParentController
         $openingBalance = Transaction::where('account_id', $accountId)->where('type', '=', 'opening_balance')
                 ->first();
         $balanceOpendate = Transaction::where('account_id', $accountId)
-                ->select([
-                    DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-                ->when(!empty($openingBalance), function ($q) use ($openingBalance) {
-                    return $q->whereDate('date', '>=', $openingBalance->date);
-                })
-                //->whereDate('date', '>=', $openingBalance->date)
-                ->whereDate('date', '<', $start)
-                ->where('status', 'final')
-                ->orderBy('date')
-                ->first()->balance;
-
-
+                        ->select([
+                            DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                        ->when(!empty($openingBalance), function ($q) use ($openingBalance) {
+                            return $q->whereDate('date', '>=', $openingBalance->date);
+                        })
+                        //->whereDate('date', '>=', $openingBalance->date)
+                        ->whereDate('date', '<', $start)
+                        ->where('status', 'final')
+                        ->orderBy('date')
+                        ->first()->balance;
 
 //        dd($balanceOpendate);
 
         $credit_bal = Transaction::where('account_id', $accountId)
-            ->whereDate('date', '>=', $dateRange[0])
-            ->whereDate('date', '<=', $dateRange[1])
-            ->where('account_type', 'credit')
-            ->where('status', 'final')
-            ->sum('amount');
+                ->whereDate('date', '>=', $dateRange[0])
+                ->whereDate('date', '<=', $dateRange[1])
+                ->where('account_type', 'credit')
+                ->where('status', 'final')
+                ->sum('amount');
 
         $debit_bal = Transaction::where('account_id', $accountId)
-            ->whereDate('date', '>=', $dateRange[0])
-            ->whereDate('date', '<=', $dateRange[1])
-            ->where('account_type', 'debit')
-            ->where('status', 'final')
-            ->sum('amount');
-        if(isset($opening_bal->amount) && !empty($opening_bal->amount)){
-        $upto_bal = $balanceOpendate + $credit_bal - $debit_bal + $opening_bal->amount;
-        }else{
+                ->whereDate('date', '>=', $dateRange[0])
+                ->whereDate('date', '<=', $dateRange[1])
+                ->where('account_type', 'debit')
+                ->where('status', 'final')
+                ->sum('amount');
+        if (isset($opening_bal->amount) && !empty($opening_bal->amount)) {
+            $upto_bal = $balanceOpendate + $credit_bal - $debit_bal + $opening_bal->amount;
+        } else {
             $upto_bal = $balanceOpendate + $credit_bal - $debit_bal;
         }
 //        dd($upto_bal);
         $balanceUntilDate = Transaction::
-        where('account_id', $accountId)
-            ->select([
-                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-            ->whereDate('date', '<=', $dateRange[0])
-            ->whereDate('date', '<=', $dateRange[1])
-            ->where('status', 'final')
-            ->orderBy('date')
-            ->first()->balance;
+                        where('account_id', $accountId)
+                        ->select([
+                            DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                        ->whereDate('date', '<=', $dateRange[0])
+                        ->whereDate('date', '<=', $dateRange[1])
+                        ->where('status', 'final')
+                        ->orderBy('date')
+                        ->first()->balance;
 
 //        dd($balanceUntilDate);
-
         //all debit except service charge and lot items
         $totalExpense = Transaction::
-        where('account_id', $accountId)
-            ->select([
-                DB::raw('SUM(amount) as balance')])
-            ->whereBetween('date', $dateRange)
-            ->where('status', 'final')
-            ->where('type', '!', 'service-charge')
-            ->whereNull('lot_item_id')
-            ->where('account_type', 'debit')
-            ->orderBy('date')
-            ->first()->balance;
+                        where('account_id', $accountId)
+                        ->select([
+                            DB::raw('SUM(amount) as balance')])
+                        ->whereBetween('date', $dateRange)
+                        ->where('status', 'final')
+                        ->where('type', '!', 'service-charge')
+                        ->whereNull('lot_item_id')
+                        ->where('account_type', 'debit')
+                        ->orderBy('date')
+                        ->first()->balance;
 
         $cashAccount = Account::where('is_cash_account', 1)->first();
 
         $cashbookAmount = Transaction::
-        where('account_id', $cashAccount->id)
-            ->select([
-                DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
-            //->whereDate('date', '<=', $dateRange[0])
-            ->whereDate('date', '<=', $dateRange[1])
-            ->where('status', 'final')
-            ->orderBy('date')
-            ->first()->balance;
+                        where('account_id', $cashAccount->id)
+                        ->select([
+                            DB::raw('SUM(IF(transactions.account_type="credit", amount, -1 * amount)) as balance')])
+                        //->whereDate('date', '<=', $dateRange[0])
+                        ->whereDate('date', '<=', $dateRange[1])
+                        ->where('status', 'final')
+                        ->orderBy('date')
+                        ->first()->balance;
 
         $unpaidChequeAmount = //$transactions->whereHas('cheques', function ($query) use ($end) {
-            Cheque::where('cheques.type', 'transaction')
+                Cheque::where('cheques.type', 'transaction')
                 ->where('account_id', $accountId)
                 ->whereDate('cheques.issue_date', '<=', $end)
                 ->whereDate('cheques.issue_date', '>=', $start)
                 ->where(function ($q) use ($end) {
                     $q->whereDate('cheques.transaction_completed_date', '>', $end)
-                        ->orWhere('cheques.transaction_completed_date', null);
+                    ->orWhere('cheques.transaction_completed_date', null);
                 })
                 ->sum('amount');
 
         //Lot return
 
         $totalPending = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->whereIn('lot_items.status', ['returned', 'processing'])
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                ->whereIn('lot_items.status', ['returned', 'processing'])
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($accountId)) {
             $totalPending->where('lots.account_id', $accountId);
@@ -1862,10 +1964,10 @@ class ReportController extends ParentController
 //pending Amount start
         $total_pending_amount = 0;
         $lotProssQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->where('lot_items.status', 'processing')
-            ->whereDate('lots.date', '>=', '2022-07-01')
-            ->whereDate('lots.date', '<=', $dateRange[1])
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                ->where('lot_items.status', 'processing')
+                ->whereDate('lots.date', '>=', '2022-07-01')
+                ->whereDate('lots.date', '<=', $dateRange[1])
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotProssQuery->where('lots.account_id', $account_id);
@@ -1880,12 +1982,12 @@ class ReportController extends ParentController
         $total_pending_amount = $total_pending_amount + $prossItems->sum('amount');
 
         $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('transactions.date', '>=', $dateRange[0])
-            ->whereDate('transactions.date', '<=', $dateRange[1])
-            ->where('transactions.account_type', '=', 'debit')
-            ->groupBy('transactions.lot_item_id')
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0])
+                ->whereDate('transactions.date', '<=', $dateRange[1])
+                ->where('transactions.account_type', '=', 'debit')
+                ->groupBy('transactions.lot_item_id')
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotTreanQuery->where('lots.account_id', $account_id);
@@ -1898,12 +2000,12 @@ class ReportController extends ParentController
         $total_pending_amount = $total_pending_amount + $transac->sum('amount');
 
         $lotTreanPending = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('lots.date', '<=', $dateRange[1])
-            ->whereDate('transactions.date', '>', $dateRange[1])
-            ->where('transactions.account_type', '=', 'debit')
-            ->groupBy('transactions.lot_item_id')
-            ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('lots.date', '<=', $dateRange[1])
+                ->whereDate('transactions.date', '>', $dateRange[1])
+                ->where('transactions.account_type', '=', 'debit')
+                ->groupBy('transactions.lot_item_id')
+                ->select('lots.name as lot_name', 'lots.short_name as short_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotTreanPending->where('lots.account_id', $account_id);
@@ -1917,10 +2019,10 @@ class ReportController extends ParentController
 //        dd($tranpendCount);
 
         $lotOtvutQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->groupBy('transactions.lot_item_id')
-            ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId', 'transactions.account_type AS TranType', 'transactions.date AS TranDate', 'transactions.id AS TranID')
-            ->havingRaw('count % 2 = 0');
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->groupBy('transactions.lot_item_id')
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'lot_items.id as indexId', 'transactions.account_type AS TranType', 'transactions.date AS TranDate', 'transactions.id AS TranID')
+                ->havingRaw('count % 2 = 0');
 
         if (!empty($account_id)) {
             $lotOtvutQuery->where('lots.account_id', $account_id);
@@ -1945,14 +2047,14 @@ class ReportController extends ParentController
         }
 
         $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->whereDate('transactions.date', '>=', $dateRange[0])
-            ->whereDate('transactions.date', '<=', $dateRange[1])
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0])
+                ->whereDate('transactions.date', '<=', $dateRange[1])
 //                ->where('transactions.account_type', '=', 'credit')
-            ->groupBy('transactions.lot_item_id')
+                ->groupBy('transactions.lot_item_id')
 //                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
-            ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
-            ->havingRaw('count % 2 = 0');
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                ->havingRaw('count % 2 = 0');
 
         if (!empty($account_id)) {
             $lotTreanReturn->where('lots.account_id', $account_id);
@@ -1962,7 +2064,6 @@ class ReportController extends ParentController
 //        dd($returnDateItems);
 //        dd($returnDateItems->sum('amount'));
         //Pending amount end
-
 //        $hold = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
 //            ->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
 //            ->whereDate('lots.date', '<=', $dateRange[1])
@@ -1971,9 +2072,11 @@ class ReportController extends ParentController
 //            ->get();
 
         $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->where('lot_items.status', 'hold')
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->where('lot_items.status', 'hold')
+                ->whereDate('lots.date', '>=', $dateRange[0])
+                ->whereDate('lots.date', '<=', $dateRange[1])
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -1992,9 +2095,9 @@ class ReportController extends ParentController
 //            ->get();
 
         $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
-            //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
-            ->where('lot_items.status', 'stop')
-            ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
+                //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->where('lot_items.status', 'stop')
+                ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
         if (!empty($account_id)) {
             $lotReturnsQuery->where('lots.account_id', $account_id);
@@ -2022,6 +2125,44 @@ class ReportController extends ParentController
                 }
             }
         }
+        
+        
+        
+        
+        $lotTreanReturn = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0] . ' 00:00:00')
+                ->whereDate('transactions.date', '<=', $dateRange[1] . ' 23:59:59')
+                ->groupBy('transactions.lot_item_id')
+                ->select(DB::raw('COUNT(transactions.id) as count'), 'lots.name as lot_name', 'lots.short_name as lot_short_name', 'transactions.date AS tranDate', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount')
+                ->havingRaw('count % 2 = 0');
+
+        if (!empty($account_id)) {
+            $lotTreanReturn->where('lots.account_id', $account_id);
+        }
+
+//        $returnItems = $lotTreanReturn->pluck('lot_items.index')->toArray();
+//dd($lotTreanReturn->get());
+
+        $lotTreanQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
+                ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
+                ->whereDate('transactions.date', '>=', $dateRange[0])
+                ->whereDate('transactions.date', '<=', $dateRange[1])
+                ->where('transactions.account_type', '=', 'debit')
+                ->groupBy('transactions.lot_item_id')
+                ->select('lots.short_name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount', 'transactions.date AS paymDate');
+
+        if (!empty($account_id)) {
+            $lotTreanQuery->where('lots.account_id', $account_id);
+        }
+
+        $prossItems = $lotTreanQuery->get();
+//        dd($lotTreanReturn->count());
+        
+//        dd($prossItems->count() - $lotTreanReturn->count());
+        
+        
+        
 
 //        $data['balanceUntilDate'] = $balanceUntilDate;
 //        $data['unpaidAmount'] = $total_pending_amount;
@@ -2041,20 +2182,19 @@ class ReportController extends ParentController
         $data['items'] = [];
 //        $data['start'] = $dateRange[0];
 //        $data['end'] = $dateRange[1];
-
 //        $data['balanceUntilDate'] = $balanceUntilDate;
         $data['balanceUntilDate'] = $upto_bal;
         $data['unpaidAmount'] = $total_pending_amount;
         $data['pending_amount'] = $processing_amount;
-        $data['return_amount'] = $return_amount;
+        $data['return_amount'] = $lotTreanReturn->sum('amount');
         $data['totalExpense'] = $totalExpense;
         $data['holdAmount'] = $hold->sum('amount');
         $data['start'] = $dateRange[0];
         $data['end'] = $dateRange[1];
-        $data['return_count'] = $return_count;
+        $data['return_count'] = $lotTreanReturn->count();
         $data['pending_count'] = $processing_count;
-        $data['paid_amount'] = $paid_amount;
-        $data['paid_count'] = $paid_count;
+        $data['paid_amount'] = $prossItems->sum('amount') - $lotTreanReturn->sum('amount');
+        $data['paid_count'] = $prossItems->count() - $lotTreanReturn->count();
         $data['hold_amount'] = $hold_amount;
         $data['hold_count'] = $hold_count;
         $data['stop_amount'] = $stop_amount;
@@ -2063,24 +2203,24 @@ class ReportController extends ParentController
         $data['tranpendCount'] = $tranpendCount;
         $data['unpaidChequeAmount'] = $unpaidChequeAmount;
         $data['cashbookAmount'] = $cashbookAmount;
+//        dd($data);
 
         if ($type == 'pdf') {
 
             $pdf = PDF::loadView('report.bank.reconciliation.export', $data);
-            $fileName = 'bank_reconciliation_' . now()->format('Y-m-d H:i:s') . '.pdf';
+            $fileName = 'bank_reconciliation_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
             return $pdf->stream($fileName,);
         }
 
         if ($type == 'excel') {
-            $fileName = 'bank_reconciliation_' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'bank_reconciliation_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.bank.reconciliation.export', $data), $fileName);
         }
 
         return "Export type is invalid";
     }
 
-    function budgetReport()
-    {
+    function budgetReport() {
 
         $financialYears = FinancialYear::getForDropdown();
 
@@ -2093,28 +2233,26 @@ class ReportController extends ParentController
 
             //first get the budget
             $budgetItems = BudgetItem::with('head', 'items.headItem')
-                //->whereNull('parent_id')
-                ->select('*')
-                ->selectSub(function ($query) {
-                    $query->selectRaw('sum(expense_transactions.amount) as expense_amount')
+                    //->whereNull('parent_id')
+                    ->select('*')
+                    ->selectSub(function ($query) {
+                        $query->selectRaw('sum(expense_transactions.amount) as expense_amount')
                         ->from('expense_transactions')
                         ->whereColumn('expense_transactions.head_id', 'budget_items.head_id')
                         ->whereColumn('expense_transactions.head_item_id', 'budget_items.head_item_id');
-                    /* ->where(function ($q) {
-                      $q->whereColumn('expense_transactions.head_item_id', 'budget_items.head_item_id')
-                      ->orWhereNull('budget_items.head_item_id');
-                      }); */
-                }, 'expense_amount')
-                // ->where('budget_id', $id)
-                ->get();
+                        /* ->where(function ($q) {
+                          $q->whereColumn('expense_transactions.head_item_id', 'budget_items.head_item_id')
+                          ->orWhereNull('budget_items.head_item_id');
+                          }); */
+                    }, 'expense_amount')
+                    // ->where('budget_id', $id)
+                    ->get();
 
             return "hello";
             $totalTransactionAmountThoseHaveLot = Transaction::where('financial_year_id', $financialYearId)
-                ->where('lot_item_id', '!=', null)
-                ->where('lot_item_id', '!=', 0)
-                ->sum('amount');
-
-
+                    ->where('lot_item_id', '!=', null)
+                    ->where('lot_item_id', '!=', 0)
+                    ->sum('amount');
 
             return view('report.budget.table', compact('budgetItems', 'financialYear', 'totalTransactionAmountThoseHaveLot'));
         }
@@ -2122,8 +2260,7 @@ class ReportController extends ParentController
         return view('report.budget.report', compact('financialYears'));
     }
 
-    function budgetReportExport()
-    {
+    function budgetReportExport() {
 
         $type = \request()->input('type');
 
@@ -2133,20 +2270,20 @@ class ReportController extends ParentController
 
         //first get the budget
         $budgetItems = BudgetItem::with('head', 'items.headItem')
-            //->whereNull('parent_id')
-            ->select('*')
-            ->selectSub(function ($query) {
-                $query->selectRaw('sum(expense_transactions.amount) as expense_amount')
+                //->whereNull('parent_id')
+                ->select('*')
+                ->selectSub(function ($query) {
+                    $query->selectRaw('sum(expense_transactions.amount) as expense_amount')
                     ->from('expense_transactions')
                     ->whereColumn('expense_transactions.head_id', 'budget_items.head_id')
                     ->whereColumn('expense_transactions.head_item_id', 'budget_items.head_item_id');
-                /* ->where(function ($q) {
-                  $q->whereColumn('expense_transactions.head_item_id', 'budget_items.head_item_id')
-                  ->orWhereNull('budget_items.head_item_id');
-                  }); */
-            }, 'expense_amount')
-            // ->where('budget_id', $id)
-            ->get();
+                    /* ->where(function ($q) {
+                      $q->whereColumn('expense_transactions.head_item_id', 'budget_items.head_item_id')
+                      ->orWhereNull('budget_items.head_item_id');
+                      }); */
+                }, 'expense_amount')
+                // ->where('budget_id', $id)
+                ->get();
 
         $data['budgetItems'] = $budgetItems;
         $data['financialYear'] = $financialYear;
@@ -2157,17 +2294,16 @@ class ReportController extends ParentController
 
             return view('report.budget.export', $data);
             $pdf = PDF::loadView('report.budget.export', $data, [], 'utf-8');
-            $fileName = 'budget_report_' . now()->format('Y-m-d H:i:s') . '.pdf';
+            $fileName = 'budget_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.pdf';
 
             return $pdf->stream($fileName,);
         }
 
         if ($type == 'excel') {
-            $fileName = 'budget_report_' . now()->format('Y-m-d H:i:s') . '.xlsx';
+            $fileName = 'budget_report_' . now()->setTimezone('Asia/Dhaka')->format('Y-m-d H:i:s') . '.xlsx';
             return Excel::download(new ReportExport('report.budget.export', $data), $fileName);
         }
 
         return "Export type is invalid";
     }
-
 }

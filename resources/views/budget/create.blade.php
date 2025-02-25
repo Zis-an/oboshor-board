@@ -37,7 +37,7 @@
                 $('#total-amount').val(amount);
                 // Update the hidden form field with the total amount
                 $('input[name="amount"]').val(amount);
-            })
+            });
 
             $(document).on('change', '.td-amount', function () {
                 let amount = 0;
@@ -54,7 +54,7 @@
                 $('#total-amount').val(amount);
                 // Update the hidden form field with the total amount
                 $('input[name="amount"]').val(amount);
-            })
+            });
 
             $('#year_id').on('change', function(){
                 let id = this.value;
@@ -70,7 +70,7 @@
                         fetchHeadsAndItems(id);
                     }
                 })
-            })
+            });
 
             // Newly Added Part
             // Function to fetch heads & items and show modal
@@ -138,3 +138,4 @@
         })
     </script>
 @endpush
+

@@ -200,6 +200,7 @@ class ReportController extends Controller {
 
     function fdrReport() {
 
+
         if (\request()->ajax()) {
 
             $date = \request()->input('date');
@@ -436,7 +437,7 @@ class ReportController extends Controller {
 //            }
 //
 //            $items = $lotReturnsQuery->get();
-
+            
 //             $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
 //                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
 ////                    ->where('lot_items.status', 'processing')
@@ -451,14 +452,14 @@ class ReportController extends Controller {
 //                    ->join('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
 ////                    ->where('lot_items.status', 'processing')
 ////                    ->where('lots.date', '>=', $start)
-//                    ->where('lots.date', '<=', $end)
+//                    ->where('lots.date', '<=', $end)                      
 //                    ->orderBy('transactions.date', 'DESC')
-//                    ->groupBy('transactions.lot_item_id')
+//                    ->groupBy('transactions.lot_item_id')              
 //                    ->having('transactions.account_type', '=', 'credit')
 //                    ->where('transactions.date', '<=', $end)
 //                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
 
-
+            
             if (!empty($account_id)) {
                 $lotReturnsQuery->where('lots.account_id', $account_id);
             }
@@ -475,7 +476,7 @@ class ReportController extends Controller {
 
     function exportPendingItemsReport() {
         $account_id = \request()->input('account_id');
-
+        
         $lotReturnsQuery = LotItem::join('lots', 'lots.id', '=', 'lot_items.lot_id')
                 //->leftJoin('transactions', 'transactions.lot_item_id', '=', 'lot_items.id')
                 ->where('lot_items.status', 'processing')
@@ -491,7 +492,7 @@ class ReportController extends Controller {
 //                    ->where('transactions.account_type', '=', 'debit')
 //                    ->groupBy('transactions.lot_item_id')
 //                    ->select('lots.name as lot_name', 'lot_items.date', 'lot_items.status', 'lot_items.comment', 'lot_items.index', 'lot_items.amount');
-//
+//        
         if (!empty($account_id)) {
             $lotReturnsQuery->where('lots.account_id', $account_id);
         }

@@ -221,7 +221,7 @@
 
                 @endif
 
-
+                    {{--Update By Zisan--}}
 {{--                <li class="nav-item">--}}
 {{--                    <a href="{{route('approvals.index')}}"--}}
 {{--                       class="nav-link {{(request()->segment('1') == 'approval-requests') ? 'active': ''}}">--}}
@@ -230,6 +230,7 @@
 {{--                    </a>--}}
 {{--                </li>--}}
 
+                    {{--Update By Zisan--}}
 {{--                <li class="nav-item has-treeview {{(request()->segment('1') == 'items' || request()->is('issue-inventory-items/create') || request()->is('item-requests') || request()->is('issue-inventory-items') )   ? 'menu-open': ''}}">--}}
 {{--                    <a href="#" class="nav-link">--}}
 {{--                        <i class="nav-icon fas fa-plus-circle"></i>--}}
@@ -279,6 +280,48 @@
 {{--                        </li>--}}
 
 {{--                    </ul>--}}
+{{--                </li>--}}
+
+
+{{--                <li class="nav-item">--}}
+{{--                    <a href="{{route('items.data.section')}}"--}}
+{{--                       class="nav-link {{(request()->segment('1') == 'items') ? 'active': ''}}">--}}
+{{--                        <i class="far fa-circle nav-icon"></i>--}}
+{{--                        <p>Inventory Items</p>--}}
+{{--                    </a>--}}
+{{--                </li>--}}
+{{--                <li class="nav-item">--}}
+{{--                    <a href="#"--}}
+{{--                       class="nav-link">--}}
+{{--                        <i class="far fa-arrow-alt-circle-down nav-icon"></i>--}}
+{{--                        <p>Stock In</p>--}}
+{{--                    </a>--}}
+{{--                </li>--}}
+
+
+
+{{--                <li class="nav-item">--}}
+{{--                    <a href="{{route('issue-inventory-items.create')}}"--}}
+{{--                       class="nav-link {{request()->is('issue-inventory-items/create') ? 'active' : ''}}">--}}
+{{--                        <i class="far fa-arrow-alt-circle-up nav-icon"></i>--}}
+{{--                        <p>Stock Out</p>--}}
+{{--                    </a>--}}
+{{--                </li>--}}
+
+{{--                <li class="nav-item">--}}
+{{--                    <a href="{{route('item-requests.index')}}"--}}
+{{--                       class="nav-link {{request()->is('item-requests') ? 'active': ''}}">--}}
+{{--                        <i class="far fa-list-alt nav-icon"></i>--}}
+{{--                        <p>Requested Items</p>--}}
+{{--                    </a>--}}
+{{--                </li>--}}
+
+{{--                <li class="nav-item">--}}
+{{--                    <a href="{{route('issue-inventory-items.index')}}"--}}
+{{--                       class="nav-link {{request()->is('issue-inventory-items') ? 'active': ''}}">--}}
+{{--                        <i class="far fa-check-circle nav-icon"></i>--}}
+{{--                        <p>Issued Items</p>--}}
+{{--                    </a>--}}
 {{--                </li>--}}
 
                 <!-- Income -->
@@ -449,7 +492,9 @@
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+
                             @if(auth()->user()->can('expense-budget.view'))
+
                                 <li class="nav-item">
                                     <a href="{{route('budgets.index', ['type' => 'expense'])}}"
                                        class="nav-link {{ (request()->is('budgets') && request()->query('type') ==='expense') ? 'active': ''}}">
@@ -457,6 +502,7 @@
                                         <p>Expense Budget</p>
                                     </a>
                                 </li>
+
                             @endif
 
                             <!--                        <li class="nav-item">

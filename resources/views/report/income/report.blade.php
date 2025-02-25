@@ -116,7 +116,7 @@
                 let head_id = $('#head_id').val();
                 let head_item_id = $('#head_item_id').val();
 
-                // console.log({date, head_id, head_item_id});
+                console.log({date, head_id, head_item_id});
 
                 $.ajax({
                     url: window.location.pathname,

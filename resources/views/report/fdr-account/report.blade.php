@@ -20,7 +20,9 @@
                 </div>
 
                 <div class="col-sm-3">
-                    <button class="btn btn-primary" id="filter_btn">Filter</button>
+                    <button class="btn btn-primary" id="filter_btn">
+                        Filter
+                    </button>
                 </div>
             </div>
         </div>
@@ -32,12 +34,15 @@
 
 
 @push('scripts')
-    <script type="text/javascript" src="{{ asset('adminLTE/plugins/daterangepicker/daterangepicker.js') }}"></script>
+    <script type="text/javascript" src="{{asset('adminLTE/plugins/daterangepicker/daterangepicker.js')}}"></script>
     <script>
         $(document).ready(function () {
             $('#financial_year_id').on('change', function () {
                 const selectedValue = $(this).val();
                 const selectedText = $(this).find('option:selected').text();
+
+                console.log('Selected Value:', selectedValue);
+                console.log('Selected Text:', selectedText);
 
                 if (selectedValue === '') {
                     $('#filter_btn').attr('disabled', 'disabled');
@@ -64,12 +69,14 @@
             });
 
             $(document).on('click', '#export_btn_pdf', function () {
+                //let date = $('#date').val();
                 let fy = $("#financial_year_id").val();
                 let url = window.location.pathname+`?export=true&type=pdf&fy=${fy}`;
                 window.open(url, '_blank');
             })
 
             $(document).on('click', '#export_btn_excel', function () {
+                //let date = $('#date').val();
                 let fy = $("#financial_year_id").val();
                 let url = window.location.pathname+`?export=true&type=excel&fy=${fy}`;
                 window.open(url, '_blank');
@@ -80,6 +87,7 @@
     <script>
         $(document).ready(function () {
             // Initialize the date range picker with default values
+
             $("#date").daterangepicker({
                 autoUpdateInput: false, // Do not auto-fill the input field
                 locale: {
@@ -112,6 +120,8 @@
                                 separator: '~',
                             }
                         });
+
+                        console.log(`Date range updated to: ${startDate.format('YYYY-MM-DD')} - ${endDate.format('YYYY-MM-DD')}`);
                     }
                 }
             });

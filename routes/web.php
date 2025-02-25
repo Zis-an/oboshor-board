@@ -84,8 +84,8 @@ Route::middleware(['auth', 'set-session'])->group(function () {
     Route::get('/{type}-heads', [HeadController::class, 'index'])
         ->where('type', 'expense|income')
         ->name('heads.index');
-
-
+    
+ 
 
     //get json head items
 
@@ -93,10 +93,10 @@ Route::middleware(['auth', 'set-session'])->group(function () {
 
     Route::resource('/heads', HeadController::class)
         ->except('index');
-
+    
        Route::get('/arrange-expense-head/{type}', [HeadController::class, 'arrange_head'])->name('arrange-expense-head');
     Route::post('/update-order', [HeadController::class, 'updateOrder'])->name('save-order');
-
+    
     Route::get('/arrange-expense-head-item/{type}', [HeadItemController::class, 'arrange_head'])->name('arrange-expense-head-item');
     Route::post('/save-order-head-item', [HeadItemController::class, 'updateOrder'])->name('save-order-head-item');
 
@@ -121,8 +121,10 @@ Route::middleware(['auth', 'set-session'])->group(function () {
     Route::get('/get-item-budget', [BudgetController::class, 'getItemBudget']);
 
     Route::resource('/budgets', BudgetController::class);
+
     Route::get('/get-heads-with-status', [BudgetController::class, 'getHeadsWithStatus'])->name('get.heads');
     Route::post('/update-status', [BudgetController::class, 'updateStatus'])->name('update.status');
+
 
     Route::post('/post-petty-cash-account', [AccountController::class, 'postPettyCash']);
 
@@ -327,13 +329,16 @@ Route::middleware(['auth', 'set-session'])->group(function () {
 
     Route::get("/income-report", [ReportController::class, 'incomeReport'])
         ->name("income-report");
+    
+    Route::get("/income-sub-details/{type}/{acc_no}/{daterange}", [ReportController::class, 'incomeSubDetails'])
+        ->name("income-sub-details");
 
     Route::get('/expense-report', [ReportController::class, 'expenseReport'])
         ->name("expense-report");
 
     Route::get('/fdr-report', [ReportController::class, 'fdrReport'])
         ->name("fdr-report");
-
+    
     Route::get('/fdr-account-report-test', [MoreReportController::class, 'fdrReport'])
         ->name('fdr-account-report-test');
 
@@ -414,9 +419,9 @@ Route::middleware(['auth', 'set-session'])->group(function () {
 
     Route::get('/std-account-report', [MoreReportController::class, 'stdReport'])
         ->name('std-account-report');
-
-    Route::post('/account/transactions', [MoreReportController::class, 'fetchAccountTransactions'])
-        ->name('account.transactions.fetch');
+    
+     Route::get('/std-account-test-report/{id}', [MoreReportController::class, 'stdReportTest'])
+        ->name('std-account-test-report');
 
     Route::get('/lot-report', [MoreReportController::class, 'lotReport'])
         ->name('date-wise-lot-report');

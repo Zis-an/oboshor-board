@@ -1,6 +1,5 @@
 @extends('layouts.app')
 @push('css')
-    {{-- New Changes --}}
     <style>
         #headsList ul {
             list-style-type: none; /* Removes bullets from the list */
@@ -19,7 +18,6 @@
             padding-left: 30px;
         }
     </style>
-    {{-- New Changes --}}
 @endpush
 @section('main')
     <section class="content-header">
@@ -27,12 +25,16 @@
             <div class="d-flex justify-content-between">
                 <h4 class="text-capitalize">{{request()->query('type')}} Budgets</h4>
                 <a href="{{route('budgets.create', ['type' => request()->query('type')])}}" class="btn btn-primary">
-                    <i class="fa fa-plus"></i>&nbsp;Add</a>
+                    <i class="fa fa-plus"></i>
+                    &nbsp;Add</a>
             </div>
         </div>
     </section>
+
     <section class="card">
+
         <div class="card-body">
+
             <table class="table" id="budget-table">
                 <thead>
                 <tr>
@@ -45,7 +47,8 @@
             </table>
         </div>
     </section>
-    {{-- New Changes --}}
+
+    {{-- Newly Added --}}
     <div class="modal fade" id="budgetModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -64,8 +67,10 @@
             </div>
         </div>
     </div>
-    {{-- New Changes --}}
+
+
 @endsection
+
 @push('scripts')
     <script>
         $(document).ready(function () {
@@ -133,10 +138,12 @@
                 })
 
             })
+
+
+
         })
     </script>
 
-    {{-- Newly Added --}}
     <script>
         $(document).on('click', '.open-budget-modal', function () {
             // Fetch heads with their status and items when modal is opened
@@ -147,32 +154,24 @@
                     let listHtml = '';
                     response.heads.forEach(head => {
                         // Create the head checkbox with label
-                        // listHtml += `<li class="list-group-item bg-light">
-                        //             <label><input type="checkbox" class="head-checkbox" data-head-id="${head.id}" ${head.status === 1 ? 'checked' : ''}> <strong>${head.name}</strong></label><ul>`;
-
-                        {{-- New Changes --}}
+                        //listHtml += `<li><label><input type="checkbox" class="head-checkbox" data-head-id="${head.id}" ${head.status === 1 ? 'checked' : ''}> <strong>${head.name}</strong></label><ul>`;
                         listHtml += `
                         <li class="list-group-item bg-light">
                             <span><strong>${head.name}</strong></span>
                             <input type="checkbox" class="head-checkbox custom-checkbox" data-head-id="${head.id}" ${head.status === 1 ? 'checked' : ''}>
                         </li>`;
-                        {{-- New Changes --}}
-
                         // Create items checkboxes under the head
                         head.items.forEach(item => {
-                            // listHtml += `<li><label><input type="checkbox" class="item-checkbox" data-item-id="${item.id}" data-head-id="${head.id}" ${item.status === 1 ? 'checked' : ''}> ${item.name}</label></li>`;
-                            {{-- New Changes --}}
+                            //listHtml += `<li><label><input type="checkbox" class="item-checkbox" data-item-id="${item.id}" data-head-id="${head.id}" ${item.status === 1 ? 'checked' : ''}> ${item.name}</label></li>`;
                             listHtml += `
                             <li class="list-group-item head-item">
                                 <span>${item.name}</span>
                                 <input type="checkbox" class="item-checkbox custom-checkbox" data-item-id="${item.id}" data-head-id="${head.id}" ${item.status === 1 ? 'checked' : ''}>
                             </li>`;
-                        });
-                        {{-- New Changes --}}
 
-                        {{-- New Changes --}}
-                        // listHtml += `</ul></li>`;
-                        {{-- New Changes --}}
+                        });
+
+                        //listHtml += `</ul></li>`;
                     });
 
                     $('#headsList').html(listHtml);
@@ -276,4 +275,6 @@
             });
         });
     </script>
+
+
 @endpush

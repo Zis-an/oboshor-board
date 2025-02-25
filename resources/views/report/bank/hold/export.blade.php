@@ -71,7 +71,7 @@
             <div class="card-body">
                 <div class="bn-font head_title" >বেসরকারী শিক্ষা প্রতিষ্ঠান শিক্ষক-কর্মচারী অবসর সুবিধা বোর্ড</div>
                 <div class="bn-font head_txt" >শিক্ষা মন্ত্রণালয়</div>
-                <div class="bn-font head_title" >শিক্ষক / কর্মচারীদের পেমেন্ট বিবরণী</div>
+                <div class="bn-font head_title" >শিক্ষক / কর্মচারীদের হোল্ড বিবরণী</div>
                 
                 <div class="head_body" >{{$account->bankName}} ({{$account->account_no}}), {{$account->branchName}}</div>
 
@@ -97,7 +97,7 @@
 
                         <tr>
                             <td>{{++$count}}</td>
-                            <td>{{date('d/m/Y', strtotime($pross->paymDate))}}</td>
+                            <td>{{date('d/m/Y', strtotime($pross->lot_date))}}</td>
                             <td>{{$pross->lot_name}}</td>
                             <td style="text-align: center;">{{$pross->index}}</td>
                             <td style="text-align: right;">{{number_format($pross->amount, 2)}}</td>

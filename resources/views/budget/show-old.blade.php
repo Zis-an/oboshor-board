@@ -70,7 +70,6 @@
                     </thead>
                     <tbody>
                     @foreach($currentHeads as $headIndex=>$currentHead)
-                        @if($currentHead->items->contains('status', 1))
 
                         <tr>
                             <td class="text-bold" style="width: 50%">{{$currentHead->name}}</td>
@@ -95,12 +94,9 @@
                             <td class="text-right font-weight-bold">{{number_format($currentHead->budget->amount ?? 0, 2)}}</td>
                             <!--<td></td>-->
                         </tr>
-                        @endif
 
                         @foreach($currentHead->items as $index=>$item)
-                            @if($item->status == 1)
-
-                                <tr>
+                            <tr>
                                 <td style="width: 75%">{{$item->name}}</td>
                                 @if(!empty($prevHeads))
 
@@ -120,7 +116,6 @@
                                     {{number_format($item->budget->amount ?? 0, 2)}}
                                 </td>
                             </tr>
-                            @endif
                         @endforeach
                     @endforeach
                     </tbody>

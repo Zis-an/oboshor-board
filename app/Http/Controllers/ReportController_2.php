@@ -200,6 +200,7 @@ class ReportController extends Controller {
 
     function fdrReport() {
 
+
         if (\request()->ajax()) {
 
             $date = \request()->input('date');

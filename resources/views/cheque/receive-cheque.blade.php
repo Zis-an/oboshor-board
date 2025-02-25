@@ -62,7 +62,6 @@
             //     })
             // })
 
-            // Newly added to add search of select2
             $(document).on('click', '.deposit-btn', function () {
                 $('#deposit_modal').load($(this).data('href'), function () {
                     $(this).modal('show');
@@ -77,7 +76,6 @@
                     });
                 });
             });
-           // Newly added part ends
 
             $(document).on('click', '.complete-transaction-btn', function(){
                 $('#deposit_modal').load($(this).data('href'), function (){

@@ -38,17 +38,20 @@
         $(document).ready(function () {
             $(document).on('click', '#export_btn_pdf', function () {
                 console.log('export');
+                //let date = $('#date').val();
                 let fy = $('#financial_year_id').val();
                 let url = window.location.pathname + `?export=true&type=pdf&fy=${fy}`;
                 window.open(url, '_blank');
             })
 
             $(document).on('click', '#export_btn_excel', function () {
+                //let date = $('#date').val();
                 let fy = $('#financial_year_id').val();
                 let url = window.location.pathname + `?export=true&type=excel&fy=${fy}`;
                 window.open(url, '_blank');
             })
-        });
+        })
+
     </script>
 
 
@@ -125,4 +128,5 @@
             });
         });
     </script>
+
 @endpush

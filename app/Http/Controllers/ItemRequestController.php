@@ -123,4 +123,12 @@ class ItemRequestController extends Controller
         return view('item.item-request.issue-request-item', compact('inventoryRequest'));
     }
 
+//    function issueItem($id)
+//    {
+//        $inventoryRequest = InventoryRequest::with(['items.item', 'user'])
+//            ->findOrFail($id);
+//
+//        return view('item.item-request.issue-request-item', compact('inventoryRequest'));
+//    }
+
 }

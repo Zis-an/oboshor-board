@@ -110,8 +110,8 @@
                     <tfoot>
                         <tr>
                             <td colspan="3" style="font-weight: bold; text-align: right;">Total:</td>
-                            <td style="font-weight: bold; text-align: center;">{{$count}}</td>
-                            <td style="font-weight: bold; text-align: right;">{{number_format($amount_val, 2)}}</td>
+                            <td style="font-weight: bold; text-align: center;">{{$paidItemtotal}}</td>
+                            <td style="font-weight: bold; text-align: right;">{{number_format($paidItemAmount, 2)}}</td>
                         </tr>
                     </tfoot>
                 </table>

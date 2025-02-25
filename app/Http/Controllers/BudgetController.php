@@ -18,19 +18,23 @@ use Mpdf\Mpdf;
 
 class BudgetController extends ParentController
 {
+
     function index()
     {
+
         if (\request()->ajax()) {
+
             $type = \request()->query('type');
-            $budgets = Budget::with('financialYear')->where('type', $type);
+
+            $budgets = Budget::with('financialYear')
+                ->where('type', $type);
+
             return DataTables::of($budgets)
                 ->addColumn('actions', function ($row) {
                     return "
                             <a class='btn btn-primary btn-sm view-budget-btn' href='/budgets/$row->id'>Details</a>
                             <a class='btn btn-primary btn-sm edit-branch-btn' href='/budgets/$row->id/edit'>Edit</a>
                             <button class='btn btn-danger btn-sm delete-budget-btn' data-href='/budgets/$row->id'>Delete</button>
-
-
                             <button type='button' class='btn btn-info open-budget-modal' data-toggle='modal' data-target='#budgetModal' data-id='$row->id'>Assign Heads</button>";
                 })
                 ->editColumn('amount', function ($row) {
@@ -39,6 +43,7 @@ class BudgetController extends ParentController
                 ->rawColumns(['actions'])
                 ->make(true);
         }
+
         return view('budget.index');
     }
 
@@ -55,6 +60,11 @@ class BudgetController extends ParentController
 
         $isExportable = \request()->input('export');
 
+        /* $budgetItems = BudgetItem::with('head', 'items.headItem')
+          ->whereNull('parent_id')
+          ->where('budget_id', $id)
+          ->get(); */
+
         $type = $budget->type;
 
         $prevBudget = Budget::where("financial_year_id", $budget->financial_year_id)
@@ -65,6 +75,7 @@ class BudgetController extends ParentController
         $prevHeads = [];
 
         if ($type == 'expense') {
+
             $currentHeads = Head::with(['budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
                 $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
                     ->where("budgets.financial_year_id", $budget->financial_year_id)
@@ -88,10 +99,13 @@ class BudgetController extends ParentController
                         ->where('transactions.status', 'final')
                         ->whereBetween("transactions.date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date]);
                 }
-            ])->where('type', $type)
+            ])->where('type', $type)->orderBy('order', 'asc')
                 ->get();
 
+            //dd($currentHeads->toArray());
+
             if (!empty($prevFinancialYear)) {
+
                 $prevHeads = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
                     $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
                         ->where("budgets.financial_year_id", $prevFinancialYear->id)
@@ -115,12 +129,19 @@ class BudgetController extends ParentController
                             ->select('transaction_items.*')
                             ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
                     }
-                ])->where('type', $type)
+                ])->where('type', $type)->orderBy('order', 'asc')
                     ->get();
+               // dd($prevHeads->toArray());
             }
+
+            // ✅ Apply filtering to remove heads that have no items with status == 1
+            $currentHeads = $currentHeads->filter(function ($head) {
+                return $head->items->contains('status', 1);
+            });
         }
 
         if ($type == 'income') {
+
             $currentHeads = Head::with(['budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
                 $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
                     ->where("budgets.financial_year_id", $budget->financial_year_id)
@@ -142,10 +163,11 @@ class BudgetController extends ParentController
                         ->where('transactions.status', 'final')
                         ->select('id', 'amount', 'head_item_id');
                 }
-            ])->where('type', $type)
+            ])->where('type', $type)->orderBy('order', 'asc')
                 ->get();
 
             if (!empty($prevFinancialYear)) {
+
                 $prevHeads = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
                     $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
                         ->where("budgets.financial_year_id", $prevFinancialYear->id)
@@ -167,15 +189,10 @@ class BudgetController extends ParentController
                             ->where('transactions.status', 'final')
                             ->select('id', 'amount', 'head_item_id');
                     }
-                ])->where("type", $type)
+                ])->where("type", $type)->orderBy('order', 'asc')
                     ->get();
             }
         }
-
-        // ✅ Apply filtering to remove heads that have no items with status == 1
-        $currentHeads = $currentHeads->filter(function ($head) {
-            return $head->items->contains('status', 1);
-        });
 
         $data['currentHeads'] = $currentHeads;
         $data['budget'] = $budget;
@@ -187,7 +204,7 @@ class BudgetController extends ParentController
         $data['exportFormat'] = \request()->input('type');
 
         if (!empty($isExportable)) {
-
+//dd($data);
             $type = \request()->input('type');
 
             if ($type == 'pdf') {
@@ -219,8 +236,16 @@ class BudgetController extends ParentController
                 ]);
 
                 $mpdf->WriteHTML($html);
+
+// $mpdf->Output($user->name.'_'.$user->index_no.'.pdf','I');
                 $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
                 return $mpdf->Output($fileName, 'I');
+
+//                return view('budget.export-budget-details', $data);
+//                $pdf = PDF::loadView('budget.export-budget-details', $data);
+//                $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
+//
+//                return $pdf->stream($fileName);
             }
 
             if ($type == 'excel') {
@@ -231,8 +256,88 @@ class BudgetController extends ParentController
             return "<h4>this export type is not supported</h4>";
         }
 
+
+        //return $budgetItems;
+
         return view('budget.show', compact('currentHeads', 'budget', 'prevHeads', 'currentHeads', 'prevFinancialYear', 'currentFinancialYear', 'prevBudget', 'type'));
     }
+
+//    function create()
+//    {
+//        $type = \request()->query('type');
+//        if (\request()->ajax()) {
+//            $fy = \request()->input('fy');
+//            $prevFinancialYear = null;
+//            $prevBudget = 0;
+//            if (!empty($fy)) {
+//                $financialYear = FinancialYear::findOrFail($fy);
+//                $expName = explode('-', $financialYear->name);
+//                $name = implode('-', [$expName[0] - 1, $expName[1] - 1]);
+//                $prevFinancialYear = FinancialYear::where('name', $name)
+//                    ->first();
+//                $prevBudget = Budget::where('financial_year_id', $prevFinancialYear->id)
+//                    ->where("type", $type)
+//                    ->first();
+//            }
+//            if (!empty($prevFinancialYear)) {
+//                if ($type == 'expense') {
+//
+//                    $headQuery = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
+//                        $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                            ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                            ->where('budgets.type', $type)
+//                            ->select('budget_items.*');
+//                    }, 'items.budget' => function ($query) use ($type, $prevFinancialYear) {
+//                        $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                            ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                            ->where('budgets.type', $type)
+//                            ->select('budget_items.*');
+//                    },
+//                        'transactionItems' => function ($query) use ($prevFinancialYear) {
+//                            $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+//                                ->select('transaction_items.*')
+//                                ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
+//                        },
+//                        'items.transactionItems' => function ($query) use ($prevFinancialYear) {
+//                            $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+//                                ->select('transaction_items.*')
+//                                ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
+//                        }
+//                    ]);
+//                }
+//                if ($type == 'income') {
+//                    $headQuery = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
+//                        $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                            ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                            ->where('budgets.type', $type)
+//                            ->select('budget_items.*');
+//                    }, 'items.budget' => function ($query) use ($type, $prevFinancialYear) {
+//                        $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                            ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                            ->where('budgets.type', $type)
+//                            ->select('budget_items.*');
+//                    },
+//                        'transactions' => function ($query) use ($prevFinancialYear) {
+//                            $query->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
+//                                ->select('id', 'amount', 'head_id');
+//                        },
+//                        'items.transactions' => function ($query) use ($prevFinancialYear) {
+//                            $query->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
+//                                ->select('id', 'amount', 'head_item_id');
+//                        }
+//                    ]);
+//                }
+//            } else {
+//                $headQuery = Head::with('items');
+//            }
+//            $heads = $headQuery->where('type', $type)
+//                ->get();
+//            return view('budget.create-form', compact('heads', 'type', 'prevFinancialYear', 'prevBudget', 'type'));
+//        }
+//        $financialYears = FinancialYear::getForDropdown();
+//        return view('budget.create', compact('financialYears'));
+//    }
+
 
     function create(Request $request)
     {
@@ -308,6 +413,53 @@ class BudgetController extends ParentController
         return view('budget.create', compact('financialYears'));
     }
 
+
+
+//    function store()
+//    {
+//        \request()->validate([
+//            'year_id' => 'required',
+//            'amount' => 'required',
+//        ]);
+//        $user = auth()->user();
+//        DB::beginTransaction();
+//        $type = \request()->input('type');
+//        try {
+//            $budget = Budget::create([
+//                'amount' => \request()->amount,
+//                'financial_year_id' => \request()->input('year_id'),
+//                'date' => now(),
+//                'created_by' => $user->id,
+//                'type' => \request()->input('type'),
+//            ]);
+//            foreach (\request()->items as $childItem) {
+//                $headId = $childItem['head_id'];
+//                $parent = BudgetItem::create([
+//                    'budget_id' => $budget->id,
+//                    'head_id' => $headId,
+//                    'amount' => !empty($childItem['amount']) ? $childItem['amount'] : 0,
+//                ]);
+//                if (isset($childItem['child'])) {
+//                    foreach ($childItem['child'] as $item) {
+//                        BudgetItem::create([
+//                            'budget_id' => $budget->id,
+//                            'head_id' => $headId,
+//                            'head_item_id' => $item['head_item_id'],
+//                            'amount' => !empty($item['amount']) ? $item['amount'] : 0,
+//                            'parent_id' => $parent->id,
+//                        ]);
+//                    }
+//                }
+//            }
+//            DB::commit();
+//            return redirect()->route('budgets.index', ['type' => $type]);
+//        } catch (\Exception $exception) {
+//            DB::rollBack();
+//            $this->handleException($exception);
+//            return back()->withErrors($exception->getMessage());
+//        }
+//    }
+
     function store()
     {
         \request()->validate([
@@ -363,56 +515,186 @@ class BudgetController extends ParentController
         }
     }
 
-    function edit($id)
+
+
+//    function edit($id)
+//    {
+//        $budget = Budget::findOrFail($id);
+//        $budgetItems = BudgetItem::with('head', 'items.headItem')
+//            ->whereNull('parent_id')
+//            ->where('budget_id', $id)
+//            ->get();
+//        $financialYears = FinancialYear::getForDropdown();
+//        //dd($budgetHeads);
+//        /* ExpenseHead::with(['items' => function ($query) use ($budget) {
+//          return $query->join('budget_items', 'budget_items.expense_head_item_id', '=', 'expense_head_items.id')
+//          ->where('budget_items.budget_id', '=', $budget->id);
+//          }])->get(); */
+//        return view('budget.edit', compact('budget', 'budgetItems', 'financialYears'));
+//    }
+
+    public function edit($id)
     {
         $budget = Budget::findOrFail($id);
 
-        $budgetItems = BudgetItem::with('head', 'items.headItem')
-            ->whereNull('parent_id')
-            ->where('budget_id', $id)
-            ->get();
+        // Fetch budget items, ensuring head_id and head_item_id are included
+        $budgetItems = BudgetItem::where('budget_id', $id)->get();
+
+        $heads = Head::with('items')->get();
+
+
+        $headItems = HeadItem::all();
+      
 
         $financialYears = FinancialYear::getForDropdown();
 
-        $heads = Head::all();
-        $headItems = HeadItem::all();
-
         return view('budget.edit', compact('budget', 'budgetItems', 'financialYears', 'heads', 'headItems'));
     }
+//    function update($id)
+//    {
+//        \request()->validate([
+//            'amount' => 'required',
+//        ]);
+//        $user = auth()->user();
+//        DB::beginTransaction();
+//
+//        try {
+//            $budget = Budget::findOrFail($id);
+//            $budget->amount = \request()->amount;
+//            //$budget->financial_year_id = \request()->input('financial_year_id');
+//            $budget->save();
+//            foreach (\request()->items as $childItem) {
+//
+//                $parenItem = BudgetItem::find($childItem['id']);
+//                $parenItem->amount = $childItem['amount'];
+//                $parenItem->save();
+//                if (isset($childItem['child'])) {
+//                    foreach ($childItem['child'] as $item) {
+//                        $cItem = BudgetItem::find($item['id']);
+//                        $cItem->amount = $item['amount'];
+//                        $cItem->save();
+//                    }
+//                }
+//            }
+//            toastr()->success('Budget Updated');
+//            DB::commit();
+//            return redirect()->route('budgets.index', ['type' => $budget->type]);
+//        } catch (\Exception $exception) {
+//            DB::rollBack();
+//            $this->handleException($exception);
+//            return back()->withErrors($exception->getMessage());
+//        }
+//    }
 
-    function update($id)
-    {
-        \request()->validate([
-            'amount' => 'required',
-        ]);
-        $user = auth()->user();
-        DB::beginTransaction();
-        try {
-            $budget = Budget::findOrFail($id);
-            $budget->amount = \request()->amount;
-            $budget->save();
-            foreach (\request()->items as $childItem) {
-                $parenItem = BudgetItem::find($childItem['id']);
-                $parenItem->amount = $childItem['amount'];
-                $parenItem->save();
-                if (isset($childItem['child'])) {
-                    foreach ($childItem['child'] as $item) {
-                        $cItem = BudgetItem::find($item['id']);
-                        $cItem->amount = $item['amount'];
-                        $cItem->save();
-                    }
-                }
-            }
+     public function update($id)
+     {
+         // Decode the selected_items JSON string
+         $selectedItems = json_decode(request()->input('selected_items'), true);
 
-            toastr()->success('Budget Updated');
-            DB::commit();
-            return redirect()->route('budgets.index', ['type' => $budget->type]);
-        } catch (\Exception $exception) {
-            DB::rollBack();
-            $this->handleException($exception);
-            return back()->withErrors($exception->getMessage());
-        }
-    }
+         // Start a database transaction
+         DB::beginTransaction();
+
+         try {
+             // Find the budget by ID once (to avoid multiple queries)
+             $budget = Budget::findOrFail($id);
+
+             // If selected items are null, update existing budget items
+             if ($selectedItems == null) {
+                 // Get the budget items array from the request
+                 $budgetItems = request()->input('budget_items');
+                 if (!$budgetItems) {
+                     dd(request()->all()); // Debugging: Check if data is missing
+                 }
+
+                 // Initialize budget amount difference
+                 $budgetAmountDifference = 0;
+
+                 // Loop through the budget items and update each one
+                 foreach ($budgetItems as $item) {
+                     $budgetItem = BudgetItem::find($item['id']);
+
+                     if ($budgetItem && $budgetItem->amount != $item['amount']) {
+                         // Calculate difference
+                         $difference = $item['amount'] - $budgetItem->amount;
+
+                         // Update and save the new amount
+                         $budgetItem->amount = $item['amount'];
+                         $budgetItem->save();
+
+                         // Add difference to total budget amount difference
+                         $budgetAmountDifference += $difference;
+                     }
+                 }
+
+                 // Update the budget amount (adding the total difference)
+                 $budget->amount += $budgetAmountDifference;
+                 $budget->save();
+
+                 DB::commit();
+
+                 // Return a success message and redirect
+                 toastr()->success('Budget Updated');
+                 return redirect()->route('budgets.index', ['type' => $budget->type]);
+             }
+
+             // If selected items exist, process them
+             $totalAmount = 0;
+
+             // Loop through each head in selectedItems
+             foreach ($selectedItems as $head) {
+                 // Create or update the budget item for the head
+                 $budgetItem = BudgetItem::firstOrNew([
+                     'budget_id' => $id,
+                     'head_id' => $head['HeadId'],
+                     'parent_id' => NULL  // No parent for the head itself
+                 ]);
+
+                 // Set or reset head item amount
+                 $budgetItem->amount = 0.00;
+                 $budgetItem->actual_amount = 0.00;
+                 $budgetItem->save();
+
+                 // Loop through each item under this head
+                 foreach ($head['Items'] as $childItem) {
+                     // Create or update the head item
+                     $headItem = BudgetItem::firstOrNew([
+                         'budget_id' => $id,
+                         'head_id' => $head['HeadId'],
+                         'item_id' => $childItem['ItemId'],
+                         'parent_id' => $budgetItem->id
+                     ]);
+
+                     // Update head item details
+                     $headItem->amount = $childItem['Amount'];
+                     $headItem->actual_amount = 0.00;
+                     $headItem->head_item_id = $childItem['ItemId'];
+                     $headItem->quantity = NULL;
+
+                     // Save the head item
+                     $headItem->save();
+
+                     // Add amount to total budget amount
+                     $totalAmount += $childItem['Amount'];
+                 }
+             }
+
+             // Update the budget total amount
+             $budget->amount = $totalAmount;
+             $budget->save();
+
+             DB::commit();
+
+             // Return a success message and redirect
+             toastr()->success('Budget Updated');
+             return redirect()->route('budgets.index', ['type' => $budget->type]);
+         } catch (\Exception $e) {
+             // Rollback on error
+             DB::rollBack();
+             return back()->withErrors(['error' => 'Something went wrong! ' . $e->getMessage()]);
+         }
+     }
+
+
 
     function destroy($id)
     {
@@ -421,11 +703,16 @@ class BudgetController extends ParentController
         return $this->respondWithSuccess('Deleted');
     }
 
+
     public function getHeadsWithStatus()
     {
         $heads = Head::with('items')->get(); // Fetch heads and their items along with their statuses
         return response()->json(['heads' => $heads]);
     }
+
+
+
+
 
     // Update the status of selected head items
     public function updateStatus(Request $request)
@@ -471,4 +758,6 @@ class BudgetController extends ParentController
 
         return response()->json(['message' => 'Status updated successfully']);
     }
+
+
 }

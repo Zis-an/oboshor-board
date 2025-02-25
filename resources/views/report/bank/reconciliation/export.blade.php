@@ -72,8 +72,8 @@
                             $closingBalance += $unpaidAmount;
                         @endphp
                         <td>Paid</td>
-                        <td style="text-align: right;">{{$paid_count - $returnDateItems->count('index')}}</td>
-                        <td style="width: 250px; text-align: right;">{{number_format(($paid_amount - $returnDateItems->sum('amount')),2)}}</td>
+                        <td style="text-align: right;">{{$paid_count}}</td>
+                        <td style="width: 250px; text-align: right;">{{number_format(($paid_amount),2)}}</td>
                     </tr>
                     <tr>
                         @php
@@ -88,8 +88,8 @@
                             $closingBalance += $unpaidAmount;
                         @endphp
                         <td>Returned</td>
-                        <td style="text-align: right;">{{$returnDateItems->count('index')}}</td>
-                        <td style="text-align: right;">{{number_format($returnDateItems->sum('amount'), 2)}}</td>
+                        <td style="text-align: right;">{{$return_count}}</td>
+                        <td style="text-align: right;">{{number_format($return_amount, 2)}}</td>
                     </tr>
                     <tr>
                         @php

@@ -18,8 +18,9 @@ return new class extends Migration
             $table->unsignedBigInteger('head_id');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->boolean('status')->default(0)->nullable();
+            $table->integer('status')->default(1);
             $table->timestamps();
+
 
             $table->foreign('head_id')->references('id')
                 ->on('heads')->cascadeOnDelete();

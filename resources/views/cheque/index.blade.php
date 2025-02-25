@@ -67,12 +67,10 @@
             //         datePicker();
             //         $('#account_id').select2({
             //             width: '100%',
-            //             placeholder: 'Select Account',
             //         })
             //     })
             // })
 
-            // This part of the code is to fix the search functionality of select2 inside deposit modal
             $(document).on('click', '.deposit-btn', function () {
                 $('#deposit_modal').load($(this).data('href'), function () {
                     $(this).modal('show');
@@ -87,7 +85,6 @@
                     });
                 });
             });
-            // Fixation of deposit modals search ends
 
             $(document).on('click', '.complete-transaction-btn', function () {
                 $('#deposit_modal').load($(this).data('href'), function () {

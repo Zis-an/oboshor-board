@@ -82,24 +82,24 @@
 
             <div class="bn-font head_title" >বেসরকারী শিক্ষা প্রতিষ্ঠান শিক্ষক-কর্মচারী অবসর সুবিধা বোর্ড </div>
             <div class="bn-font head_txt" >শিক্ষা মন্ত্রণালয়</div>
-            <div class="bn-font head_title" >বিগত অর্থ বছরের সাথে ২০২৩-২০২৪ অর্থ বছরের তুলনামূলক {{$budget_type}} বিবরণী</div>
+            <div class=" head_title" ><span class="bn-font">বিগত অর্থ বছরের সাথে</span> <span class="en-font">{{$currentFinancialYear->name}}</span> <span class="bn-font"> অর্থ বছরের তুলনামূলক {{$budget_type}} বিবরণী</span></div>
             <table class="table table-bordered" style=" margin-top: 20px;">
                 <thead>
 
 
                     <tr>
-                        <th class="bn-font" >ক্র নং</th>
+                        <!--<th class="bn-font" >ক্র নং</th>-->
                         <th class="bn-font" >বিবরণ</th>
                         @if(!empty($prevHeads))
-                        <th  class="bn-font">২০২২-২০২৩ <br />অর্থবছরের প্রস্তাবিত {{$budget_type}}</th>
+                        <th><span class="en-font">{{$prevFinancialYear->name}}</span><br /><span class="bn-font">অর্থবছরের প্রস্তাবিত {{$budget_type}}</span></th>
                         @if($type == 'income')
-                        <th class="bn-font" >২০২২-২০২৩ <br />অর্থবছরের প্রস্তাবিত {{$budget_type}}</th>
+                        <th><span class="en-font">{{$prevFinancialYear->name}}</span><br /><span class="bn-font"> অর্থবছরের প্রস্তাবিত {{$budget_type}}</span></th>
                         @endif
                         @if($type == 'expense')
-                        <th class="bn-font">২০২২-২০২৩ <br />অর্থবছরের প্রকৃত {{$budget_type}}</th>
+                        <th><span class="en-font">{{$prevFinancialYear->name}}</span><br /><span class="bn-font">অর্থবছরের প্রকৃত {{$budget_type}}</span></th>
                         @endif
-                        <th class=" bn-font">
-                            ২০২৩-২০২৪ <br />অর্থবছরের প্রস্তাবিত {{$budget_type}}
+                        <th >
+                            <span class="en-font">{{$currentFinancialYear->name}}</span> <br /><span class="bn-font">অর্থবছরের প্রস্তাবিত {{$budget_type}} </span>
                         </th>
                         <!--<th></th>-->
                         @endif
@@ -112,7 +112,7 @@
                     @foreach($currentHeads as $headIndex=>$currentHead)
 
                     <tr>
-                        <td  class="text-bold" style=" text-align: center; font-weight: bold;">{{ ++$iv }}</td>
+                        {{--<td  class="text-bold" style=" text-align: center; font-weight: bold;">{{ ++$iv }}</td>--}}
                         <td class="text-bold bn-font" style=" font-weight: bold;">{{$currentHead->name}}</td>
                         @if(!empty($prevHeads))
                         <td class="text-right font-weight-bold" style="text-align: right;">{{format($prevHeads[$headIndex]->budget->amount ?? 0, 2)}}</td>
@@ -138,7 +138,7 @@
 
                     @foreach($currentHead->items as $index=>$item)
                     <tr>
-                        <td class="text-bold" style=" text-align: center;">{{ ++$ir }}</td>
+                        {{--<td class="text-bold" style=" text-align: center;">{{ ++$ir }}</td>--}}
                         <td class="bn-font">{{$item->name}}</td>
                         @if(!empty($prevHeads))
 
@@ -164,7 +164,7 @@
                 </tbody>
                 <tfoot style="background-color: #eee">
                     <tr class="bg-light">
-                        <td></td>
+                        <!--<td></td>-->
                         <td style=" text-align: right;">
                             <strong class="bn-font">মোটঃ</strong>
                         </td>

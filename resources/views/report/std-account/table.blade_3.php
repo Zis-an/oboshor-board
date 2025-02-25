@@ -54,23 +54,11 @@
                     @endphp
                     @php
                     // head id 7 (শিক্ষক-কর্মচারীদের মাসিক বেতনের ৬% হারে প্রাপ্ত চাঁদা)
-                    $others_bank = App\Models\Transaction::where('account_id', $account->id)
-                                    ->where('status', 'final')
-                                    ->where('account_type', 'credit')
-                                    ->where('type', 'transfer_from')
-                                    ->when($dateRange, function($query) use ($dateRange) {
-                                        // Split the date range into fromDate and toDate
-                                        [$fromDate, $toDate] = explode('~', $dateRange);
-
-                                        // Apply the date range filter
-                                        $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
-                                    })
-                                    ->get();
                     $six_percent = App\Models\Transaction::where('account_id', $account->id)
-                                    ->where('status', 'final')
-                                    ->where('account_type', 'credit')
                                     ->where('head_id', 7)
                                     ->where('head_item_id', 110)
+                                    ->where('status', 'final')
+                                    ->where('account_type', 'credit')
                                     ->when($dateRange, function($query) use ($dateRange) {
                                         // Split the date range into fromDate and toDate
                                         [$fromDate, $toDate] = explode('~', $dateRange);
@@ -107,7 +95,7 @@
                     $return = App\Models\Transaction::where('account_id', $account->id)
                                     ->where('status', 'final')
                                     ->where('account_type', 'credit')
-                                    ->where('type', 'returned')
+                                    ->whereNotNull('lot_item_id')
                                     ->when($dateRange, function($query) use ($dateRange) {
                                         [$fromDate, $toDate] = explode('~', $dateRange);
                                         $query->whereBetween('transactions.date', [$fromDate, $toDate . ' 23:59:59']);
@@ -150,54 +138,46 @@
                                 <div class="modal-body">
                                     <div class="d-flex justify-content-center">
                                         <div class="border-dark border-top border-bottom border-left border-right text-center w-100">
-                                            <strong>৬% হারে প্রাপ্ত চাঁদা </strong>
+                                            <strong>৬% হারে প্রাপ্ত চাঁদা</strong>
                                         </div>
-                                        <div class="border-dark border-top border-bottom border-right text-right w-100">
-                                            <a href="/income-sub-details/te_six/{{$account->id}}/{{$dateRange}}" target="_blank">{{ $six_percent->isNotEmpty() ? (number_format($six_percent->sum('amount'), 2)) : 0 }}</a>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-center">
-                                        <div class="border-dark border-top border-bottom border-left border-right text-center w-100">
-                                            <strong>অন্যান্য ব্যাংক থেকে প্রাপ্ত</strong>
-                                        </div>
-                                        <div class="border-dark border-top border-bottom border-right text-right w-100">
-                                            <a href="/income-sub-details/others/{{$account->id}}/{{$dateRange}}" target="_blank">{{ $others_bank->isNotEmpty() ? (number_format($others_bank->sum('amount'), 2)) : 0 }}</a>
+                                        <div class="border-dark border-top border-bottom border-right text-center w-100">
+                                            {{ $six_percent->isNotEmpty() ? (number_format($six_percent->sum('amount'), 2)) : 0 }}
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-center">
                                         <div class="border-dark border-bottom border-left border-right text-center w-100">
                                             <strong>৭৫% হিসাবে আয়</strong>
                                         </div>
-                                        <div class="border-dark border-bottom border-right text-right w-100">
-                                            <a href="/income-sub-details/seventyfive/{{$account->id}}/{{$dateRange}}" target="_blank">{{ $seventy_five_percent->isNotEmpty() ? (number_format($seventy_five_percent->sum('amount'), 2)) : 0 }}</a>
+                                        <div class="border-dark border-bottom border-right text-center w-100">
+                                            {{ $seventy_five_percent->isNotEmpty() ? (number_format($seventy_five_percent->sum('amount'), 2)) : 0 }}
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-center">
                                         <div class="border-dark border-bottom border-left border-right text-center w-100">
                                             <strong>সরকার কর্তৃক প্রদত্ত অনুদান</strong>
                                         </div>
-                                        <div class="border-dark border-bottom border-right text-right w-100">
-                                            <a href="/income-sub-details/govt/{{$account->id}}/{{$dateRange}}" target="_blank">{{ $gf->isNotEmpty() ? (number_format($gf->sum('amount'), 2)) : 0 }}</a>
+                                        <div class="border-dark border-bottom border-right text-center w-100">
+                                            {{ $gf->isNotEmpty() ? (number_format($gf->sum('amount'), 2)) : 0 }}
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-center">
                                         <div class="border-dark border-bottom border-left border-right text-center w-100">
                                             <strong>রিটার্ন</strong>
                                         </div>
-                                        <div class="border-dark border-bottom border-right text-right w-100">
-                                            <a href="/income-sub-details/return/{{$account->id}}/{{$dateRange}}" target="_blank">{{ $return->isNotEmpty() ? (number_format($return->sum('amount'), 2)) : 0 }}</a>
+                                        <div class="border-dark border-bottom border-right text-center w-100">
+                                            {{ $return->isNotEmpty() ? (number_format($return->sum('amount'), 2)) : 0 }}
                                         </div>
                                     </div>
                                     
                                     @php
-                                        $totalAmount = $six_percent->sum('amount') + $others_bank->sum('amount') + $seventy_five_percent->sum('amount')
+                                        $totalAmount = $six_percent->sum('amount') + $seventy_five_percent->sum('amount')
                                                         + $gf->sum('amount') + $return->sum('amount');
                                     @endphp
                                     <div class="d-flex justify-content-center">
                                         <div class="border-dark border-bottom border-left border-right text-center w-100">
                                             <strong>সর্বমোট</strong>
                                         </div>
-                                        <div class="border-dark border-bottom border-right text-right w-100">
+                                        <div class="border-dark border-bottom border-right text-center w-100">
                                             {{ number_format($totalAmount, 2) }}
                                         </div>
                                     </div>

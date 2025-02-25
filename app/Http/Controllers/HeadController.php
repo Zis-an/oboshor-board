@@ -21,8 +21,9 @@ class HeadController extends ParentController
 
             return DataTables::of($heads)
                 ->addColumn('actions', function ($row) {
-                    return "<button class='btn btn-primary btn-sm edit-head-btn' data-href='/heads/$row->id/edit' >Edit</button>
-                            <button class='btn btn-danger btn-sm delete-head-btn' data-href='heads/$row->id'>Delete</button>";
+                    return "<button class='btn btn-primary btn-sm edit-head-btn' data-href='/heads/$row->id/edit' >Edit</button>"
+//                            <button class='btn btn-danger btn-sm delete-head-btn' data-href='heads/$row->id'>Delete</button>"
+                            ;
                 })
                 ->editColumn('name', function ($row) {
                     if ($row->is_office_expense) {

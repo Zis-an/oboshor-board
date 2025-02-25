@@ -93,7 +93,6 @@ function datePicker() {
 }
 
 function formatNumber(number) {
-
     let formated = new Intl.NumberFormat('en-US', {maximumSignificantDigits: 2}).format(number);
     $('.format-number').text(formated)
 }

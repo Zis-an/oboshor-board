@@ -20,17 +20,17 @@
             </thead>
             <tbody>
                 @php 
-                $count = 0; 
-                $amount_val = 0.00;
-                @endphp
-                @foreach($prossItems as $pross)
-                @if(in_array($pross->index, $returnItems))
-                @php continue; @endphp
-                @endif
-                @php 
-                $count++;
-                $amount_val = $amount_val + $pross->amount;
-                @endphp
+                        $count = 0; 
+                        $amount_val = 0.00;
+                        @endphp
+                        @foreach($prossItems as $pross)
+                        @if(in_array($pross->index, $returnItems))
+                        @php continue; @endphp
+                        @endif
+                        @php 
+                        $count++;
+                        $amount_val = $amount_val + $pross->amount;
+                        @endphp
 
                 <tr>
                     <td>{{date('d/m/Y', strtotime($pross->paymDate))}}</td>
@@ -43,8 +43,8 @@
             <tfoot>
                 <tr>
                     <td colspan="2" style="font-weight: bold; text-align: right;">Total:</td>
-                    <td style="font-weight: bold; text-align: center;">{{$count}}</td>
-                    <td style="font-weight: bold; text-align: right;">{{number_format($amount_val, 2)}}</td>
+                    <td style="font-weight: bold; text-align: center;">{{$prossItems->count() - $lotTreanReturn->count()}}</td>
+                    <td style="font-weight: bold; text-align: right;">{{number_format(($prossItems->sum('amount') - $lotTreanReturn->sum('amount')), 2)}}</td>
                 </tr>
             </tfoot>
         </table>

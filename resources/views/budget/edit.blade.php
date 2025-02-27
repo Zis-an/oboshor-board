@@ -6,7 +6,7 @@
             font-size: 16px;
         }
         #headsList {
-            list-style-type: none; /* Remove default list bullets */
+            list-style-type: none;
             padding: 0;
         }
         .list-group-item {
@@ -16,34 +16,29 @@
             border: 1px solid #ddd;
         }
         .custom-checkbox {
-            transform: scale(1.3); /* Slightly bigger checkboxes */
+            transform: scale(1.3);
             cursor: pointer;
         }
         .head-item {
-            /*padding-left: 40px; !* Indent items under heads *!*/
             font-style: italic;
         }
         .modal-lg {
-            max-width: 800px; /* Ensure modal has good size */
+            max-width: 800px;
         }
     </style>
 @endpush
 @section('main')
-    {{-- Page Header --}}
     <section class="content-header">
         <div class="container-fluid d-flex justify-content-between">
             <h4>Update Budget</h4>
         </div>
     </section>
-    {{-- Card Section --}}
     <section class="card">
         @include('partials.error-alert', ['errors' => $errors])
         {!! Form::open(['url' => route('budgets.update', $budget->id), 'method' => 'POST']) !!}
         @method('PUT')
         @csrf
-        {{-- Hidden Input for Selected Items --}}
         {!! Form::hidden('selected_items', '', ['id' => 'selectedItemsInput']) !!}
-        {{-- Financial Year Dropdown + Add Button --}}
         <div class="card-header">
             <div class="row">
                 <div class="col-6">
@@ -57,7 +52,6 @@
                 </div>
             </div>
         </div>
-        {{-- Card Body --}}
         <div class="card-body" id="budgetContainer">
             <div>
                 <table class="table table-bordered">
@@ -65,14 +59,20 @@
                     <tr>
                         <th>Name</th>
                         <th>Amount</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="budgetItemsBody">
                     @foreach($budgetItems as $budgetItem)
                         <tr>
                             @if($budgetItem->parent_id == null)
                                 <td class="font-weight-bold">{{ $budgetItem->head ? $budgetItem->head->name:'' }}</td>
                                 <td></td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm remove-item" data-item-id="{{ $budgetItem->id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
                             @else
                                 <td class="pl-5 font-italic">{{ $budgetItem->headItem ? $budgetItem->headItem->name:'' }}</td>
                                 <td>
@@ -81,20 +81,23 @@
                                            name="budget_items[{{ $budgetItem->id }}][amount]"
                                            value="{{ $budgetItem->amount }}">
                                 </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm remove-item" data-item-id="{{ $budgetItem->id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
                             @endif
                         </tr>
                     @endforeach
                     </tbody>
                 </table>
             </div>
-            {{-- Save Button --}}
             <div class="d-flex justify-content-end mt-2">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
         </div>
         {!! Form::close() !!}
     </section>
-    {{-- Modal --}}
     <div class="modal fade" id="addBudgetModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
@@ -192,7 +195,6 @@
                     let itemId = $(this).data('item-id');
                     let amount = $(this).closest('.list-group-item').find('.amount-input').val();
 
-
                     // Ensure itemId and amount are valid
                     if (itemId && amount) {
                         // Find the head name correctly by traversing up to the parent head name element
@@ -246,32 +248,64 @@
                 $('#addBudgetModal').modal('hide');
 
             });
-
             // Function to update the budget table dynamically
             function updateBudgetTable(selectedItems) {
-                let tableBody = $('tbody');
+                let tableBody = $('#budgetItemsBody');
                 tableBody.empty(); // Clear existing rows
-
                 selectedItems.forEach(headGroup => {
                     // Add Head Row
                     tableBody.append(`
-                                <tr class="font-weight-bold" data-head-id="${headGroup.HeadId}">
-                                    <td>${headGroup.HeadName}</td>
-                                    <td></td>
-                                </tr>
-                            `);
-                    // Add Items Under Head
+                        <tr class="font-weight-bold" data-head-id="${headGroup.HeadId}">
+                            <td>${headGroup.HeadName}</td>
+                            <td></td>
+                        </tr>
+                    `);
                     headGroup.Items.forEach(item => {
                         tableBody.append(`
-                                    <tr class="pl-5 font-italic" data-item-id="${item.ItemId}">
-                                        <td>${item.ItemName}</td>
-                                        <td><input type="text" class="form-control td-amount" value="${item.Amount}" name="items[${item.ItemId}]" /></td>
-                                    </tr>
-                                `);
+                            <tr data-item-id="${item.ItemId}">
+                                <td class="pl-5 font-italic">${item.ItemName}</td> <!-- Move classes to td -->
+                                    <td>
+                                        <input type="text"
+                                               class="form-control td-amount"
+                                               value="${item.Amount}"
+                                               name="budget_items[${item.ItemId}][amount]" /> <!-- Adjust name attribute -->
+                                    </td>
+                            </tr>
+                        `);
                     });
                 });
             }
         });
     </script>
-@endpush
 
+    {{-- Head Items Deletion Related Functionality --}}
+    <script>
+        $(document).on('click', '.remove-item', function () {
+            let itemId = $(this).data('item-id');
+            let row = $(this).closest('tr');
+
+            if (confirm('Are you sure you want to delete this item?')) {
+                $.ajax({
+                    url: "{{ route('budget-items.destroy') }}",
+                    type: "POST",
+                    data: {
+                        _method: "DELETE",
+                        _token: "{{ csrf_token() }}",
+                        id: itemId
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            row.remove(); // Remove row from table
+                            $('#total-budget').text(response.new_budget_amount.toFixed(2)); // Update budget amount
+                        } else {
+                            alert("Error: " + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("Something went wrong.");
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

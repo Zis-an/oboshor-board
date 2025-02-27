@@ -1,47 +1,38 @@
 @extends('layouts.app')
-
 @push('css')
     <style>
         table {
             width: 100%;
             border-collapse: collapse;
         }
-
         th, td {
             border: 1px solid #000;
             padding: 8px;
             text-align: left;
         }
-
         /* Set the width of the first column to 40% */
         th:first-child, td:first-child {
             width: 40%;
         }
-
         /* Divide the remaining 60% equally among the other three columns */
         th:not(:first-child), td:not(:first-child) {
             width: 20%;
         }
-
     </style>
 @endpush
-
 @section('main')
     <section class="content-header">
         <div class="container-fluid">
             <h4>View Budget ({{$type}}) {{$currentFinancialYear->name}}</h4>
         </div>
     </section>
-
     <section class="card">
-
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <button id="export_btn_pdf" class="btn btn-success mx-1">PDF</button>
                 <button id="export_btn_excel" class="btn btn-info mx">Excel</button>
             </div>
         </div>
-
         @php
             $totalAmount=0;
         @endphp
@@ -71,7 +62,6 @@
                     <tbody>
                     @foreach($currentHeads as $headIndex=>$currentHead)
                         @if($currentHead->items->contains('status', 1))
-
                         <tr>
                             <td class="text-bold" style="width: 50%">{{$currentHead->name}}</td>
                             @if(!empty($prevHeads))
@@ -83,7 +73,6 @@
                                     @endphp
                                     <td class="text-right font-weight-bold">{{number_format($headAmount, 2)}}</td>
                                 @endif
-
                                 @if($type == 'expense')
                                     @php
                                         $headAmount = $prevHeads[$headIndex]->transactionItems->sum('amount') ?? 0;
@@ -92,11 +81,16 @@
                                     <td class="text-right font-weight-bold">{{number_format($headAmount, 2)}}</td>
                                 @endif
                             @endif
-                            <td class="text-right font-weight-bold">{{number_format($currentHead->budget->amount ?? 0, 2)}}</td>
+                            @php
+                                $totalAmountOfHeadItems = $currentHead->items->sum(function ($item) {
+                                    return $item->budget->amount ?? 0;
+                                });
+                            @endphp
+{{--                            <td class="text-right font-weight-bold">{{number_format($currentHead->budget->amount ?? 0, 2)}}</td>--}}
+                            <td class="text-right font-weight-bold">{{number_format($totalAmountOfHeadItems, 2)}}</td>
                             <!--<td></td>-->
                         </tr>
                         @endif
-
                         @foreach($currentHead->items as $index=>$item)
                             @if($item->status == 1)
 
@@ -141,31 +135,19 @@
                 </table>
             </div>
         </div>
-
-
     </section>
 @endsection
-
 @push('scripts')
     <script>
         $(document).ready(function() {
-
             $(document).on('click', '#export_btn_pdf', function () {
-
                 let url = window.location.pathname+`?export=true&type=pdf`
-
                 window.open(url, '_blank');
-
             })
-
             $(document).on('click', '#export_btn_excel', function () {
-
                 let url = window.location.pathname+`?export=true&type=excel`
-
                 window.open(url, '_blank');
-
             })
-
         })
     </script>
 @endpush

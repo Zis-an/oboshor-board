@@ -204,7 +204,7 @@ class BudgetController extends ParentController
         $data['exportFormat'] = \request()->input('type');
 
         if (!empty($isExportable)) {
-//dd($data);
+        //dd($data);
             $type = \request()->input('type');
 
             if ($type == 'pdf') {
@@ -237,15 +237,14 @@ class BudgetController extends ParentController
 
                 $mpdf->WriteHTML($html);
 
-// $mpdf->Output($user->name.'_'.$user->index_no.'.pdf','I');
+                // $mpdf->Output($user->name.'_'.$user->index_no.'.pdf','I');
                 $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
                 return $mpdf->Output($fileName, 'I');
 
-//                return view('budget.export-budget-details', $data);
-//                $pdf = PDF::loadView('budget.export-budget-details', $data);
-//                $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
-//
-//                return $pdf->stream($fileName);
+                // return view('budget.export-budget-details', $data);
+                // $pdf = PDF::loadView('budget.export-budget-details', $data);
+                // $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
+                // return $pdf->stream($fileName);
             }
 
             if ($type == 'excel') {
@@ -338,7 +337,6 @@ class BudgetController extends ParentController
 //        return view('budget.create', compact('financialYears'));
 //    }
 
-
     function create(Request $request)
     {
         $type = \request()->query('type');
@@ -412,8 +410,6 @@ class BudgetController extends ParentController
         $financialYears = FinancialYear::getForDropdown();
         return view('budget.create', compact('financialYears'));
     }
-
-
 
 //    function store()
 //    {
@@ -544,12 +540,14 @@ class BudgetController extends ParentController
 
 
         $headItems = HeadItem::all();
-      
+
 
         $financialYears = FinancialYear::getForDropdown();
 
         return view('budget.edit', compact('budget', 'budgetItems', 'financialYears', 'heads', 'headItems'));
     }
+
+
 //    function update($id)
 //    {
 //        \request()->validate([
@@ -586,113 +584,97 @@ class BudgetController extends ParentController
 //        }
 //    }
 
-     public function update($id)
-     {
-         // Decode the selected_items JSON string
-         $selectedItems = json_decode(request()->input('selected_items'), true);
 
-         // Start a database transaction
-         DB::beginTransaction();
 
-         try {
-             // Find the budget by ID once (to avoid multiple queries)
-             $budget = Budget::findOrFail($id);
+    function update($id)
+    {
+        $selectedItems = json_decode(request()->input('selected_items'), true);
 
-             // If selected items are null, update existing budget items
-             if ($selectedItems == null) {
-                 // Get the budget items array from the request
-                 $budgetItems = request()->input('budget_items');
-                 if (!$budgetItems) {
-                     dd(request()->all()); // Debugging: Check if data is missing
-                 }
+        DB::beginTransaction();
 
-                 // Initialize budget amount difference
-                 $budgetAmountDifference = 0;
+        try {
+            $budget = Budget::findOrFail($id);
 
-                 // Loop through the budget items and update each one
-                 foreach ($budgetItems as $item) {
-                     $budgetItem = BudgetItem::find($item['id']);
+            // If selected items are present, delete existing budget items first
+            if ($selectedItems != null) {
+                // Delete all existing budget items for this budget
+                BudgetItem::where('budget_id', $budget->id)->delete();
+            }
 
-                     if ($budgetItem && $budgetItem->amount != $item['amount']) {
-                         // Calculate difference
-                         $difference = $item['amount'] - $budgetItem->amount;
+            if ($selectedItems == null) {
+                // Get the budget items array from the request
+                $budgetItems = request()->input('budget_items');
 
-                         // Update and save the new amount
-                         $budgetItem->amount = $item['amount'];
-                         $budgetItem->save();
+                // Initialize budget amount difference
+                $budgetAmountDifference = 0;
 
-                         // Add difference to total budget amount difference
-                         $budgetAmountDifference += $difference;
-                     }
-                 }
+                // Loop through the budget items and update each one
+                foreach ($budgetItems as $item) {
+                    $budgetItem = BudgetItem::find($item['id']);
 
-                 // Update the budget amount (adding the total difference)
-                 $budget->amount += $budgetAmountDifference;
-                 $budget->save();
+                    if ($budgetItem && $budgetItem->amount != $item['amount']) {
+                        // Calculate difference
+                        $difference = $item['amount'] - $budgetItem->amount;
 
-                 DB::commit();
+                        // Update and save the new amount
+                        $budgetItem->amount = $item['amount'];
+                        $budgetItem->save();
 
-                 // Return a success message and redirect
-                 toastr()->success('Budget Updated');
-                 return redirect()->route('budgets.index', ['type' => $budget->type]);
-             }
+                        // Add difference to total budget amount difference
+                        $budgetAmountDifference += $difference;
+                    }
+                }
 
-             // If selected items exist, process them
-             $totalAmount = 0;
+                // Update the budget amount (adding the total difference)
+                $budget->amount += $budgetAmountDifference;
+                $budget->save();
 
-             // Loop through each head in selectedItems
-             foreach ($selectedItems as $head) {
-                 // Create or update the budget item for the head
-                 $budgetItem = BudgetItem::firstOrNew([
-                     'budget_id' => $id,
-                     'head_id' => $head['HeadId'],
-                     'parent_id' => NULL  // No parent for the head itself
-                 ]);
+                DB::commit();
 
-                 // Set or reset head item amount
-                 $budgetItem->amount = 0.00;
-                 $budgetItem->actual_amount = 0.00;
-                 $budgetItem->save();
+                // Return a success message and redirect
+                toastr()->success('Budget Updated');
+                return redirect()->route('budgets.index', ['type' => $budget->type]);
+            } else {
+                $totalAmount = 0;
 
-                 // Loop through each item under this head
-                 foreach ($head['Items'] as $childItem) {
-                     // Create or update the head item
-                     $headItem = BudgetItem::firstOrNew([
-                         'budget_id' => $id,
-                         'head_id' => $head['HeadId'],
-                         'item_id' => $childItem['ItemId'],
-                         'parent_id' => $budgetItem->id
-                     ]);
+                foreach ($selectedItems as $head) {
+                    // Create new parent budget item for the head
+                    $budgetItem = BudgetItem::create([
+                        'budget_id' => $id,
+                        'head_id' => $head['HeadId'],
+                        'parent_id' => null,
+                        'amount' => 0.00,
+                        'actual_amount' => 0.00
+                    ]);
 
-                     // Update head item details
-                     $headItem->amount = $childItem['Amount'];
-                     $headItem->actual_amount = 0.00;
-                     $headItem->head_item_id = $childItem['ItemId'];
-                     $headItem->quantity = NULL;
+                    foreach ($head['Items'] as $childItem) {
+                        BudgetItem::create([
+                            'budget_id' => $id,
+                            'head_id' => $head['HeadId'],
+                            'parent_id' => $budgetItem->id,
+                            'head_item_id' => $childItem['ItemId'],
+                            'amount' => $childItem['Amount'],
+                            'actual_amount' => 0.00
+                        ]);
 
-                     // Save the head item
-                     $headItem->save();
+                        $totalAmount += $childItem['Amount'];
+                    }
+                }
 
-                     // Add amount to total budget amount
-                     $totalAmount += $childItem['Amount'];
-                 }
-             }
+                $budget->amount = $totalAmount;
+                $budget->save();
+            }
 
-             // Update the budget total amount
-             $budget->amount = $totalAmount;
-             $budget->save();
+            DB::commit();
+            toastr()->success('Budget Updated');
+            return redirect()->route('budgets.index', ['type' => $budget->type]);
 
-             DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Something went wrong! ' . $e->getMessage()]);
+        }
+    }
 
-             // Return a success message and redirect
-             toastr()->success('Budget Updated');
-             return redirect()->route('budgets.index', ['type' => $budget->type]);
-         } catch (\Exception $e) {
-             // Rollback on error
-             DB::rollBack();
-             return back()->withErrors(['error' => 'Something went wrong! ' . $e->getMessage()]);
-         }
-     }
 
 
 
@@ -703,16 +685,11 @@ class BudgetController extends ParentController
         return $this->respondWithSuccess('Deleted');
     }
 
-
     public function getHeadsWithStatus()
     {
         $heads = Head::with('items')->get(); // Fetch heads and their items along with their statuses
         return response()->json(['heads' => $heads]);
     }
-
-
-
-
 
     // Update the status of selected head items
     public function updateStatus(Request $request)
@@ -758,6 +735,64 @@ class BudgetController extends ParentController
 
         return response()->json(['message' => 'Status updated successfully']);
     }
+
+
+
+
+
+
+
+
+
+
+
+    function destroyBudgetItems(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $budgetItem = BudgetItem::find($request->id);
+
+            if (!$budgetItem) {
+                return response()->json(['success' => false, 'message' => 'Item not found.']);
+            }
+
+            $budget = Budget::findOrFail($budgetItem->budget_id);
+
+            if ($budgetItem->parent_id !== null) {
+                // It's a child item, adjust budget amount
+                $budget->amount -= $budgetItem->amount;
+            }
+
+            // Delete the item
+            $budgetItem->delete();
+
+            // Check if parent (head) has no more items, delete it too
+            if ($budgetItem->parent_id === null) {
+                $childItemsCount = BudgetItem::where('parent_id', $budgetItem->id)->count();
+                if ($childItemsCount === 0) {
+                    $budgetItem->delete();
+                }
+            }
+
+            // Save the updated budget amount
+            $budget->save();
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'new_budget_amount' => $budget->amount]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Something went wrong: ' . $e->getMessage()]);
+        }
+    }
+
+
+
+
+
+
+
+
 
 
 }

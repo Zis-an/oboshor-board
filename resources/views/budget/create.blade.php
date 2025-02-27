@@ -84,16 +84,16 @@
                         let listHtml = '';
                         response.heads.forEach(head => {
                             listHtml += `
-                <li class="list-group-item bg-light">
-                    <span><strong>${head.name}</strong></span>
-                    <input type="checkbox" class="head-checkbox custom-checkbox" data-head-id="${head.id}" ${head.status === 1 ? 'checked' : ''}>
-                </li>`;
+                                <li class="list-group-item bg-light">
+                                    <span><strong>${head.name}</strong></span>
+                                    <input type="checkbox" class="head-checkbox custom-checkbox" data-head-id="${head.id}">
+                                </li>`;
                             head.items.forEach(item => {
                                 listHtml += `
-                <li class="list-group-item head-item">
-                    <span>${item.name}</span>
-                    <input type="checkbox" class="item-checkbox custom-checkbox" data-item-id="${item.id}" data-head-id="${head.id}" ${item.status === 1 ? 'checked' : ''}>
-                </li>`;
+                                    <li class="list-group-item head-item">
+                                        <span>${item.name}</span>
+                                        <input type="checkbox" class="item-checkbox custom-checkbox" data-item-id="${item.id}" data-head-id="${head.id}">
+                                    </li>`;
                             });
                         });
 
@@ -110,6 +110,52 @@
             }
 
             // Function to handle checkbox interactions
+            // function attachCheckboxListeners() {
+            //     // When a head checkbox is clicked
+            //     $(document).off('change', '.head-checkbox').on('change', '.head-checkbox', function () {
+            //         let headId = $(this).data('head-id');
+            //         let isChecked = $(this).prop('checked');
+            //
+            //         // Check/uncheck all items under the head
+            //         $(`.item-checkbox[data-head-id="${headId}"]`).prop('checked', isChecked);
+            //     });
+            //
+            //     // When an item checkbox is clicked
+            //     $(document).off('change', '.item-checkbox').on('change', '.item-checkbox', function () {
+            //         let headId = $(this).data('head-id');
+            //
+            //         // If any item is unchecked, uncheck the head checkbox
+            //         if ($(`.item-checkbox[data-head-id="${headId}"]:not(:checked)`).length > 0) {
+            //             $(`.head-checkbox[data-head-id="${headId}"]`).prop('checked', false);
+            //         }
+            //         // If all items under a head are checked, check the head checkbox
+            //         else {
+            //             $(`.head-checkbox[data-head-id="${headId}"]`).prop('checked', true);
+            //         }
+            //     });
+            // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // // Replace the existing checkbox listeners with this:
             function attachCheckboxListeners() {
                 // When a head checkbox is clicked
                 $(document).off('change', '.head-checkbox').on('change', '.head-checkbox', function () {
@@ -118,23 +164,56 @@
 
                     // Check/uncheck all items under the head
                     $(`.item-checkbox[data-head-id="${headId}"]`).prop('checked', isChecked);
+
+                    // NEW: Force update the head checkbox state based on items
+                    updateHeadCheckboxState(headId);
                 });
 
                 // When an item checkbox is clicked
                 $(document).off('change', '.item-checkbox').on('change', '.item-checkbox', function () {
                     let headId = $(this).data('head-id');
-
-                    // If any item is unchecked, uncheck the head checkbox
-                    if ($(`.item-checkbox[data-head-id="${headId}"]:not(:checked)`).length > 0) {
-                        $(`.head-checkbox[data-head-id="${headId}"]`).prop('checked', false);
-                    }
-                    // If all items under a head are checked, check the head checkbox
-                    else {
-                        $(`.head-checkbox[data-head-id="${headId}"]`).prop('checked', true);
-                    }
+                    updateHeadCheckboxState(headId);
                 });
             }
-            // Newly Added Part
+
+            // NEW: Add this helper function
+            function updateHeadCheckboxState(headId) {
+                const allItems = $(`.item-checkbox[data-head-id="${headId}"]`);
+                const checkedItems = allItems.filter(':checked');
+
+                // Check head if ANY items are checked (different from edit page logic)
+                $(`.head-checkbox[data-head-id="${headId}"]`)
+                    .prop('checked', checkedItems.length > 0);
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         })
     </script>
 @endpush

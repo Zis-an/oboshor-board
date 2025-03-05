@@ -1,9 +1,7 @@
 @extends('layouts.app')
 @push('css')
-
 @endpush
 @section('main')
-
     <section class="content-header">
         <div class="container-fluid">
             <div class="d-flex align-items-center justify-content-between">
@@ -34,32 +32,16 @@
             <table class="table border" id="lotItemsTable">
                 <thead>
                 <tr>
-                    <th>
-                        SL.
-                    </th>
-                    <th>
-                        Action
-                    </th>
-                    <th>
-                        Index
-                    </th>
+                    <th>SL.</th>
+                    <th>Action</th>
+                    <th>Index</th>
                     <th>Status</th>
                     <th>Date</th>
-                    <th>
-                        Receiver Name
-                    </th>
-                    <th>
-                        Account No.
-                    </th>
-                    <th>
-                        Amount
-                    </th>
-                    <th>
-                        Lot Name
-                    </th>
-                    <th>
-                        Bank
-                    </th>
+                    <th>Receiver Name</th>
+                    <th>Account No.</th>
+                    <th>Amount</th>
+                    <th>Lot Name</th>
+                    <th>Bank</th>
                 </tr>
                 </thead>
                 <tbody>

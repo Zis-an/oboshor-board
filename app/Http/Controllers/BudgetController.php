@@ -47,181 +47,337 @@ class BudgetController extends ParentController
         return view('budget.index');
     }
 
-    function show($id)
+//    function show($id)
+//    {
+//        $budget = Budget::findOrFail($id);
+//
+//        $currentFinancialYear = FinancialYear::find($budget->financial_year_id);
+//
+//        $expName = explode('-', $currentFinancialYear->name);
+//        $name = implode('-', [$expName[0] - 1, $expName[1] - 1]);
+//        $prevFinancialYear = FinancialYear::where('name', $name)
+//            ->first();
+//
+//        $isExportable = \request()->input('export');
+//
+//        /* $budgetItems = BudgetItem::with('head', 'items.headItem')
+//          ->whereNull('parent_id')
+//          ->where('budget_id', $id)
+//          ->get(); */
+//
+//        $type = $budget->type;
+//
+//        $prevBudget = Budget::where("financial_year_id", $budget->financial_year_id)
+//            ->where("type", $type)
+//            ->first();
+//
+//        $currentHeads = [];
+//        $prevHeads = [];
+//
+//        if ($type == 'expense') {
+//
+//            $currentHeads = Head::with(['budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
+//                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                    ->where("budgets.financial_year_id", $budget->financial_year_id)
+//                    ->where('budgets.type', $type)
+//                    ->select('budget_items.*');
+//            }, 'items.budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
+//                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                    ->where("budgets.financial_year_id", $budget->financial_year_id)
+//                    ->where('budgets.type', $type)
+//                    ->select('budget_items.*');
+//            },
+//                'transactionItems' => function ($query) use ($currentFinancialYear) {
+//                    $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+//                        ->select('transaction_items.*')
+//                        ->where('transactions.status', 'final')
+//                        ->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date]);
+//                },
+//                'items.transactionItems' => function ($query) use ($currentFinancialYear) {
+//                    $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+//                        ->select('transaction_items.*')
+//                        ->where('transactions.status', 'final')
+//                        ->whereBetween("transactions.date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date]);
+//                }
+//            ])->where('type', $type)->orderBy('order', 'asc')
+//                ->get();
+//
+//            //dd($currentHeads->toArray());
+//
+//            if (!empty($prevFinancialYear)) {
+//
+//                $prevHeads = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
+//                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                        ->where('budgets.type', $type)
+//                        ->select('budget_items.*');
+//                }, 'items.budget' => function ($query) use ($type, $prevFinancialYear) {
+//                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                        ->where('budgets.type', $type)
+//                        ->select('budget_items.*');
+//                },
+//                    'transactionItems' => function ($query) use ($prevFinancialYear) {
+//                        $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+//                            ->where('transactions.status', 'final')
+//                            ->select('transaction_items.*')
+//                            ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
+//                    },
+//                    'items.transactionItems' => function ($query) use ($prevFinancialYear) {
+//                        $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+//                            ->where('transactions.status', 'final')
+//                            ->select('transaction_items.*')
+//                            ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
+//                    }
+//                ])->where('type', $type)->orderBy('order', 'asc')
+//                    ->get();
+//               // dd($prevHeads->toArray());
+//            }
+//
+//            // ✅ Apply filtering to remove heads that have no items with status == 1
+//            $currentHeads = $currentHeads->filter(function ($head) {
+//                return $head->items->contains('status', 1);
+//            });
+//        }
+//
+//        if ($type == 'income') {
+//
+//            $currentHeads = Head::with(['budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
+//                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                    ->where("budgets.financial_year_id", $budget->financial_year_id)
+//                    ->where('budgets.type', $type)
+//                    ->select('budget_items.*');
+//            }, 'items.budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
+//                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                    ->where("budgets.financial_year_id", $budget->financial_year_id)
+//                    ->where('budgets.type', $type)
+//                    ->select('budget_items.*');
+//            },
+//                'transactions' => function ($query) use ($currentFinancialYear) {
+//                    $query->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date])
+//                        ->where('transactions.status', 'final')
+//                        ->select('id', 'amount', 'head_id');
+//                },
+//                'items.transactions' => function ($query) use ($currentFinancialYear) {
+//                    $query->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date])
+//                        ->where('transactions.status', 'final')
+//                        ->select('id', 'amount', 'head_item_id');
+//                }
+//            ])->where('type', $type)->orderBy('order', 'asc')
+//                ->get();
+//
+//            if (!empty($prevFinancialYear)) {
+//
+//                $prevHeads = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
+//                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                        ->where('budgets.type', $type)
+//                        ->select('budget_items.*');
+//                }, 'items.budget' => function ($query) use ($type, $prevFinancialYear) {
+//                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+//                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
+//                        ->where('budgets.type', $type)
+//                        ->select('budget_items.*');
+//                },
+//                    'transactions' => function ($query) use ($prevFinancialYear) {
+//                        $query->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
+//                            ->where('transactions.status', 'final')
+//                            ->select('id', 'amount', 'head_id');
+//                    },
+//                    'items.transactions' => function ($query) use ($prevFinancialYear) {
+//                        $query->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
+//                            ->where('transactions.status', 'final')
+//                            ->select('id', 'amount', 'head_item_id');
+//                    }
+//                ])->where("type", $type)->orderBy('order', 'asc')
+//                    ->get();
+//            }
+//        }
+//
+//        $data['currentHeads'] = $currentHeads;
+//        $data['budget'] = $budget;
+//        $data['prevHeads'] = $prevHeads;
+//        $data['prevFinancialYear'] = $prevFinancialYear;
+//        $data['currentFinancialYear'] = $currentFinancialYear;
+//        $data['prevBudget'] = $prevBudget;
+//        $data['type'] = $type;
+//        $data['exportFormat'] = \request()->input('type');
+//
+//        if (!empty($isExportable)) {
+//        //dd($data);
+//            $type = \request()->input('type');
+//
+//            if ($type == 'pdf') {
+//
+//                $html = view('budget.export-budget-details', $data);
+//
+//                $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+//                $fontDirs = $defaultConfig['fontDir'];
+//
+//                $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+//                $fontData = $defaultFontConfig['fontdata'];
+//
+//                $mpdf = new Mpdf([
+//                    'fontDir' => array_merge($fontDirs, [
+//                        public_path(),
+//                    ]),
+//                    'fontdata' => $fontData + [
+//                            'solaimanlipi' => [
+//                                'R' => 'fonts/SolaimanLipi.ttf',
+//                                'I' => 'fonts/SolaimanLipi.ttf',
+//                                'useOTL' => 0xFF,
+//                                'useKashida' => 75
+//                            ]
+//                        ],
+//                    'default_font' => 'sans-serif',
+//                    'mode' => 'utf-8',
+//                    'format' => 'a4',
+//                    'setAutoBottomMargin' => 'stretch'
+//                ]);
+//
+//                $mpdf->WriteHTML($html);
+//
+//                // $mpdf->Output($user->name.'_'.$user->index_no.'.pdf','I');
+//                $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
+//                return $mpdf->Output($fileName, 'I');
+//
+//                // return view('budget.export-budget-details', $data);
+//                // $pdf = PDF::loadView('budget.export-budget-details', $data);
+//                // $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
+//                // return $pdf->stream($fileName);
+//            }
+//
+//            if ($type == 'excel') {
+//                $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.xlsx';
+//                return Excel::download(new ReportExport('budget.export-budget-details', $data), $fileName);
+//            }
+//
+//            return "<h4>this export type is not supported</h4>";
+//        }
+//
+//
+//        //return $budgetItems;
+//
+//        return view('budget.show', compact('currentHeads', 'budget', 'prevHeads', 'currentHeads', 'prevFinancialYear', 'currentFinancialYear', 'prevBudget', 'type'));
+//    }
+
+    public function show($id)
     {
         $budget = Budget::findOrFail($id);
-
         $currentFinancialYear = FinancialYear::find($budget->financial_year_id);
 
         $expName = explode('-', $currentFinancialYear->name);
         $name = implode('-', [$expName[0] - 1, $expName[1] - 1]);
-        $prevFinancialYear = FinancialYear::where('name', $name)
-            ->first();
+        $prevFinancialYear = FinancialYear::where('name', $name)->first();
 
-        $isExportable = \request()->input('export');
-
-        /* $budgetItems = BudgetItem::with('head', 'items.headItem')
-          ->whereNull('parent_id')
-          ->where('budget_id', $id)
-          ->get(); */
-
+        $isExportable = request()->input('export');
         $type = $budget->type;
 
         $prevBudget = Budget::where("financial_year_id", $budget->financial_year_id)
             ->where("type", $type)
             ->first();
 
-        $currentHeads = [];
-        $prevHeads = [];
-
-        if ($type == 'expense') {
-
-            $currentHeads = Head::with(['budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
-                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                    ->where("budgets.financial_year_id", $budget->financial_year_id)
-                    ->where('budgets.type', $type)
-                    ->select('budget_items.*');
-            }, 'items.budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
+        $currentHeads = Head::with([
+            'budget' => function ($query) use ($budget, $type) {
                 $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
                     ->where("budgets.financial_year_id", $budget->financial_year_id)
                     ->where('budgets.type', $type)
                     ->select('budget_items.*');
             },
-                'transactionItems' => function ($query) use ($currentFinancialYear) {
-                    $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
-                        ->select('transaction_items.*')
-                        ->where('transactions.status', 'final')
-                        ->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date]);
-                },
-                'items.transactionItems' => function ($query) use ($currentFinancialYear) {
-                    $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
-                        ->select('transaction_items.*')
-                        ->where('transactions.status', 'final')
-                        ->whereBetween("transactions.date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date]);
-                }
-            ])->where('type', $type)->orderBy('order', 'asc')
-                ->get();
-
-            //dd($currentHeads->toArray());
-
-            if (!empty($prevFinancialYear)) {
-
-                $prevHeads = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
-                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
-                        ->where('budgets.type', $type)
-                        ->select('budget_items.*');
-                }, 'items.budget' => function ($query) use ($type, $prevFinancialYear) {
-                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
-                        ->where('budgets.type', $type)
-                        ->select('budget_items.*');
-                },
-                    'transactionItems' => function ($query) use ($prevFinancialYear) {
-                        $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
-                            ->where('transactions.status', 'final')
-                            ->select('transaction_items.*')
-                            ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
-                    },
-                    'items.transactionItems' => function ($query) use ($prevFinancialYear) {
-                        $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
-                            ->where('transactions.status', 'final')
-                            ->select('transaction_items.*')
-                            ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date]);
-                    }
-                ])->where('type', $type)->orderBy('order', 'asc')
-                    ->get();
-               // dd($prevHeads->toArray());
+            'items.budget' => function ($query) use ($budget, $type) {
+                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+                    ->where("budgets.financial_year_id", $budget->financial_year_id)
+                    ->where('budgets.type', $type)
+                    ->select('budget_items.*');
+            },
+            'transactionItems' => function ($query) use ($currentFinancialYear) {
+                $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+                    ->where('transactions.status', 'final')
+                    ->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date])
+                    ->select('transaction_items.*');
+            },
+            'items.transactionItems' => function ($query) use ($currentFinancialYear) {
+                $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+                    ->where('transactions.status', 'final')
+                    ->whereBetween("transactions.date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date])
+                    ->select('transaction_items.*');
             }
+        ])
+            ->where('type', $type)
+            ->orderBy('order', 'asc')
+            ->get();
 
-            // ✅ Apply filtering to remove heads that have no items with status == 1
+        // Handle drag-and-drop order if request has 'order' parameter
+        if (request()->has('order')) {
+            $headOrder = explode(',', request()->input('order'));
+            $currentHeads = $currentHeads->sortBy(function ($head) use ($headOrder) {
+                return array_search($head->id, $headOrder);
+            })->values();
+        }
+
+        // Fetch previous financial year's heads, keyed by ID
+        $prevHeads = collect();
+        if (!empty($prevFinancialYear)) {
+            $prevHeads = Head::with([
+                'budget' => function ($query) use ($type, $prevFinancialYear) {
+                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
+                        ->where('budgets.type', $type)
+                        ->select('budget_items.*');
+                },
+                'items.budget' => function ($query) use ($type, $prevFinancialYear) {
+                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
+                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
+                        ->where('budgets.type', $type)
+                        ->select('budget_items.*');
+                },
+                'transactionItems' => function ($query) use ($prevFinancialYear) {
+                    $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+                        ->where('transactions.status', 'final')
+                        ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
+                        ->select('transaction_items.*');
+                },
+                'items.transactionItems' => function ($query) use ($prevFinancialYear) {
+                    $query->join('transactions', 'transactions.id', 'transaction_items.transaction_id')
+                        ->where('transactions.status', 'final')
+                        ->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
+                        ->select('transaction_items.*');
+                }
+            ])
+                ->where('type', $type)
+                ->orderBy('order', 'asc')
+                ->get()
+                ->keyBy('id'); // Keyed by ID for easy lookup
+        }
+
+        // Apply filtering for expense heads (remove heads with no active items)
+        if ($type == 'expense') {
             $currentHeads = $currentHeads->filter(function ($head) {
                 return $head->items->contains('status', 1);
             });
         }
 
-        if ($type == 'income') {
+        // Prepare data for view
+        $data = [
+            'currentHeads' => $currentHeads,
+            'budget' => $budget,
+            'prevHeads' => $prevHeads,
+            'prevFinancialYear' => $prevFinancialYear,
+            'currentFinancialYear' => $currentFinancialYear,
+            'prevBudget' => $prevBudget,
+            'type' => $type,
+            'exportFormat' => request()->input('type'),
+        ];
 
-            $currentHeads = Head::with(['budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
-                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                    ->where("budgets.financial_year_id", $budget->financial_year_id)
-                    ->where('budgets.type', $type)
-                    ->select('budget_items.*');
-            }, 'items.budget' => function ($query) use ($budget, $type, $prevFinancialYear) {
-                $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                    ->where("budgets.financial_year_id", $budget->financial_year_id)
-                    ->where('budgets.type', $type)
-                    ->select('budget_items.*');
-            },
-                'transactions' => function ($query) use ($currentFinancialYear) {
-                    $query->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date])
-                        ->where('transactions.status', 'final')
-                        ->select('id', 'amount', 'head_id');
-                },
-                'items.transactions' => function ($query) use ($currentFinancialYear) {
-                    $query->whereBetween("date", [$currentFinancialYear->start_date, $currentFinancialYear->end_date])
-                        ->where('transactions.status', 'final')
-                        ->select('id', 'amount', 'head_item_id');
-                }
-            ])->where('type', $type)->orderBy('order', 'asc')
-                ->get();
-
-            if (!empty($prevFinancialYear)) {
-
-                $prevHeads = Head::with(['budget' => function ($query) use ($type, $prevFinancialYear) {
-                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
-                        ->where('budgets.type', $type)
-                        ->select('budget_items.*');
-                }, 'items.budget' => function ($query) use ($type, $prevFinancialYear) {
-                    $query->join('budgets', 'budgets.id', 'budget_items.budget_id')
-                        ->where("budgets.financial_year_id", $prevFinancialYear->id)
-                        ->where('budgets.type', $type)
-                        ->select('budget_items.*');
-                },
-                    'transactions' => function ($query) use ($prevFinancialYear) {
-                        $query->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
-                            ->where('transactions.status', 'final')
-                            ->select('id', 'amount', 'head_id');
-                    },
-                    'items.transactions' => function ($query) use ($prevFinancialYear) {
-                        $query->whereBetween("date", [$prevFinancialYear->start_date, $prevFinancialYear->end_date])
-                            ->where('transactions.status', 'final')
-                            ->select('id', 'amount', 'head_item_id');
-                    }
-                ])->where("type", $type)->orderBy('order', 'asc')
-                    ->get();
-            }
-        }
-
-        $data['currentHeads'] = $currentHeads;
-        $data['budget'] = $budget;
-        $data['prevHeads'] = $prevHeads;
-        $data['prevFinancialYear'] = $prevFinancialYear;
-        $data['currentFinancialYear'] = $currentFinancialYear;
-        $data['prevBudget'] = $prevBudget;
-        $data['type'] = $type;
-        $data['exportFormat'] = \request()->input('type');
-
+        // Handle export functionality (PDF or Excel)
         if (!empty($isExportable)) {
-        //dd($data);
-            $type = \request()->input('type');
+            $exportType = request()->input('type');
 
-            if ($type == 'pdf') {
-
+            if ($exportType == 'pdf') {
                 $html = view('budget.export-budget-details', $data);
-
-                $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-                $fontDirs = $defaultConfig['fontDir'];
-
-                $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-                $fontData = $defaultFontConfig['fontdata'];
-
                 $mpdf = new Mpdf([
-                    'fontDir' => array_merge($fontDirs, [
-                        public_path(),
-                    ]),
-                    'fontdata' => $fontData + [
+                    'fontDir' => array_merge((new \Mpdf\Config\ConfigVariables())->getDefaults()['fontDir'], [public_path()]),
+                    'fontdata' => (new \Mpdf\Config\FontVariables())->getDefaults()['fontdata'] + [
                             'solaimanlipi' => [
                                 'R' => 'fonts/SolaimanLipi.ttf',
                                 'I' => 'fonts/SolaimanLipi.ttf',
@@ -236,30 +392,24 @@ class BudgetController extends ParentController
                 ]);
 
                 $mpdf->WriteHTML($html);
-
-                // $mpdf->Output($user->name.'_'.$user->index_no.'.pdf','I');
-                $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
-                return $mpdf->Output($fileName, 'I');
-
-                // return view('budget.export-budget-details', $data);
-                // $pdf = PDF::loadView('budget.export-budget-details', $data);
-                // $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.pdf';
-                // return $pdf->stream($fileName);
+                return $mpdf->Output('budget_export_' . now()->format('Y-m-d H:i:s') . '.pdf', 'I');
             }
 
-            if ($type == 'excel') {
-                $fileName = 'budge_export_' . now()->format('Y-m-d H:i:s') . '.xlsx';
-                return Excel::download(new ReportExport('budget.export-budget-details', $data), $fileName);
+            if ($exportType == 'excel') {
+                return Excel::download(new ReportExport('budget.export-budget-details', $data), 'budget_export_' . now()->format('Y-m-d H:i:s') . '.xlsx');
             }
 
-            return "<h4>this export type is not supported</h4>";
+            return "<h4>This export type is not supported</h4>";
         }
 
-
-        //return $budgetItems;
-
-        return view('budget.show', compact('currentHeads', 'budget', 'prevHeads', 'currentHeads', 'prevFinancialYear', 'currentFinancialYear', 'prevBudget', 'type'));
+        return view('budget.show', compact(
+            'currentHeads', 'budget', 'prevHeads',
+            'prevFinancialYear', 'currentFinancialYear', 'prevBudget', 'type'
+        ));
     }
+
+
+
 
 //    function create()
 //    {
@@ -511,8 +661,6 @@ class BudgetController extends ParentController
         }
     }
 
-
-
 //    function edit($id)
 //    {
 //        $budget = Budget::findOrFail($id);
@@ -546,7 +694,6 @@ class BudgetController extends ParentController
 
         return view('budget.edit', compact('budget', 'budgetItems', 'financialYears', 'heads', 'headItems'));
     }
-
 
 //    function update($id)
 //    {
@@ -583,8 +730,6 @@ class BudgetController extends ParentController
 //            return back()->withErrors($exception->getMessage());
 //        }
 //    }
-
-
 
     function update($id)
     {
@@ -675,9 +820,6 @@ class BudgetController extends ParentController
         }
     }
 
-
-
-
     function destroy($id)
     {
         $budget = Budget::findOrFail($id);
@@ -691,7 +833,6 @@ class BudgetController extends ParentController
         return response()->json(['heads' => $heads]);
     }
 
-    // Update the status of selected head items
     public function updateStatus(Request $request)
     {
         $headItemIds = $request->input('head_item_ids', []); // Default to empty array if null
@@ -736,16 +877,6 @@ class BudgetController extends ParentController
         return response()->json(['message' => 'Status updated successfully']);
     }
 
-
-
-
-
-
-
-
-
-
-
     function destroyBudgetItems(Request $request)
     {
         DB::beginTransaction();
@@ -785,14 +916,4 @@ class BudgetController extends ParentController
             return response()->json(['success' => false, 'message' => 'Something went wrong: ' . $e->getMessage()]);
         }
     }
-
-
-
-
-
-
-
-
-
-
 }

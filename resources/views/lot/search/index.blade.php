@@ -15,7 +15,7 @@
 
         {!! Form::open(['url' => route('lots-post-search')]) !!}
         @include('lot.search.search')
-        
+
         {!! Form::close() !!}
     </div>
 </div>

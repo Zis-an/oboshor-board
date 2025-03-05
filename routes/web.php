@@ -274,6 +274,7 @@ Route::middleware(['auth', 'set-session'])->group(function () {
 
     Route::get('/lots-export', [LotController::class, 'export']);
 
+    Route::post('/transfer-lot-items', [LotController::class, 'transferItems'])->name('transfer.lot.items');
     Route::resource('/lots', LotController::class);
 
     //settings

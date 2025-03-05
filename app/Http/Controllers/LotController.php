@@ -48,7 +48,6 @@ class LotController extends ParentController
                     DB::raw("SUM(amount) as total_amount"),
                 );
 
-
             if (!empty($accountId)) {
                 $lots->where("account_id", $accountId);
             }
@@ -84,7 +83,6 @@ class LotController extends ParentController
 
     function show($id)
     {
-
         $lot = Lot::withSum('items', 'amount')->findOrFail($id);
 
         $export = \request()->input('export');
@@ -114,7 +112,20 @@ class LotController extends ParentController
                         return "<span class='badge badge-warning'>Hold</span>";
                     } else if ($row->status == 'returned') {
                         return "<span class='badge badge-danger'>Returned</span>";
+
+
+
+
+
+                    } else if($row->status == 'transferred') {
+                        $comment = $row->comment;
+                        return "<span class='badge badge-info'>Transferred</span> <small>($comment)</small>";
                     }
+
+
+
+
+
                     return 'Processing';
                 })
                 ->editColumn('amount', function ($row) {
@@ -142,7 +153,14 @@ class LotController extends ParentController
             return $this->handleExport('lot.item.export', $type, $data);
         }
 
-        return view('lot.view', compact('lot'));
+
+
+
+        $lots = Lot::where('id', '!=', $id)->get(); // Fetch all lots except the current one
+        return view('lot.view', compact('lot', 'lots'));
+
+
+
     }
 
     function create()
@@ -170,7 +188,6 @@ class LotController extends ParentController
             $parsedData = Excel::toArray((object)[], $file);
             //Remove header row
             $data = array_splice($parsedData[0], 7, -2);
-//            dd($data);
 
             $name = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('uploads/'), $name);
@@ -258,8 +275,6 @@ class LotController extends ParentController
             'account_id' => 'required',
         ]);
 
-        //dd($request->all());
-
 
         $lot = Lot::findOrFail($id);
 
@@ -280,7 +295,6 @@ class LotController extends ParentController
 
         $mergeApprovalFiles = array_merge($existingApprovalFiles, $approvalFiles);
 
-        //dd($existingApprovalFiles, $approvalFiles, $mergeApprovalFiles);
 
         if (!empty($mergeApprovalFiles)) {
             $data['approval_file'] = implode('|', $mergeApprovalFiles);
@@ -312,7 +326,6 @@ class LotController extends ParentController
 
     function getSearch()
     {
-
         $accountId = \request()->query('acc');
 
         $account = null;
@@ -337,7 +350,7 @@ class LotController extends ParentController
         $activeFinancialYear = FinancialYear::where('id', $setting->active_financial_year_id)
             ->first();
 
-//        $initialDateRange = implode('~', [$activeFinancialYear->start_date, $activeFinancialYear->end_date]);
+        // $initialDateRange = implode('~', [$activeFinancialYear->start_date, $activeFinancialYear->end_date]);
         $initialDateRange = implode('~', ['2022-07-01', date("Y-m-d")]);
 
         $status = array(
@@ -411,7 +424,7 @@ class LotController extends ParentController
             ->first();
 
         $initialDateRange = implode('~', ['2022-07-01', date("Y-m-d")]);
-//        $initialDateRange = '';
+        // $initialDateRange = '';
 
         $status = array(
             'all' => 'All',
@@ -421,7 +434,6 @@ class LotController extends ParentController
             'sent' => 'Sent',
         );
 
-        // dd($beneficiary);
         return view('lot.search.result', compact('results', 'accounts', 'lots', 'initialDateRange', 'status', 'request', 'lot'));
     }
 
@@ -511,7 +523,7 @@ class LotController extends ParentController
 
         try {
 
-            if (!($lotItem->status == 'hold' || $lotItem->status == 'processing' || $lotItem->status == 'returned')) {
+            if (!($lotItem->status == 'hold' || $lotItem->status == 'processing' || $lotItem->status == 'returned' || $lotItem->status == 'transferred')) {
                 return $this->respondWithError('only hold, Retiurned or processiing items can be send');
             }
 
@@ -745,14 +757,11 @@ class LotController extends ParentController
         DB::beginTransaction();
 
         try {
-
-
             $files = (new FileService())->upload($request, 'file');
 
             if ($lotItem->status == 'sent') {
                 return $this->respondWithError('Only Retured and pending Items Can be Stop');
             }
-
 
             $lotItem->status = 'stop';
             $lotItem->stop_file = !empty($files) ? $files[0] : '';
@@ -965,5 +974,92 @@ class LotController extends ParentController
         return "<h4>this export type is not supported</h4>";
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    public function transferItems(Request $request)
+//    {
+//        $request->validate([
+//            'current_lot_id' => 'required|exists:lots,id',
+//            'target_lot_id' => 'required|exists:lots,id',
+//            'items' => 'required|array',
+//            'items.*' => 'exists:lot_items,id',
+//        ]);
+//
+//        $targetLot = Lot::findOrFail($request->target_lot_id);
+//
+//        foreach ($request->items as $itemId) {
+//            $item = LotItem::find($itemId);
+//            if ($item) {
+//                $item->lot_id = $targetLot->id;
+//                $item->save();
+//            }
+//        }
+//
+//        return response()->json(['status' => 'success', 'message' => 'Items transferred successfully.']);
+//    }
+
+
+
+
+
+
+
+
+    public function transferItems(Request $request)
+    {
+        $request->validate([
+            'current_lot_id' => 'required|exists:lots,id',
+            'target_lot_id' => 'required|exists:lots,id',
+            'items' => 'required|array',
+            'items.*' => 'exists:lot_items,id',
+        ]);
+
+        $currentLot = Lot::findOrFail($request->current_lot_id);
+        $targetLot = Lot::findOrFail($request->target_lot_id);
+
+        foreach ($request->items as $itemId) {
+            $originalItem = LotItem::find($itemId);
+            if ($originalItem) {
+                // Update original item as 'transferred'
+                $originalItem->status = 'transferred';
+                $originalItem->comment = "Transferred to {$targetLot->short_name}";
+                $originalItem->save();
+
+                // Duplicate the item for the target lot
+                $newItem = $originalItem->replicate();
+                $newItem->lot_id = $targetLot->id;
+                $newItem->status = 'transferred';
+                $newItem->comment = "Transferred from {$currentLot->short_name}";
+                $newItem->save();
+            }
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Items transferred successfully.']);
+    }
+
+
+
+
+
+
+
 
 }

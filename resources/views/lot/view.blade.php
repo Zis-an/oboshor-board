@@ -1,17 +1,33 @@
 @extends('layouts.app')
-
 @push('css')
     <link href="{{asset('/adminLTE/plugins/datatables-select/css/select.bootstrap4.min.css')}}">
-@endpush
+    <style>
+        #target_lot {
+            width: 100%;
+            display: block;
+        }
 
+        #target_lot:focus {
+            width: 100%;
+        }
+    </style>
+@endpush
 @section('main')
     <section class="content-header">
         <div class="container-fluid">
             <div class="d-flex align-items-center justify-content-between">
                 <h4>Lot Items</h4>
-                <a href="{{route('add-lot-item.create', $lot->id)}}" id="add_lot_item" class="btn btn-primary">Add New
-                    Item
-                </a>
+                <div>
+                    <a href="{{route('add-lot-item.create', $lot->id)}}" id="add_lot_item" class="btn btn-primary">Add New Item</a>
+
+
+
+                    <button id="transfer_items_btn" class="btn btn-warning ml-2">Transfer Items</button>
+
+
+
+                </div>
+
             </div>
         </div>
     </section>
@@ -61,39 +77,23 @@
                     <th>
                         <input type="checkbox" name="check_all" id="check_all"/>
                     </th>
-                    <th>
-                        Actions
-                    </th>
-                    <th>
-                        Index
-                    </th>
+                    <th>Actions</th>
+                    <th>Index</th>
                     <th>Status</th>
                     <th>Date</th>
-                    <th>
-                        Receiver Name
-                    </th>
-                    <th>
-                        Bank Acc.
-                    </th>
+                    <th>Receiver Name</th>
+                    <th>Bank Acc.</th>
                     <th>District</th>
                     <th>Branch</th>
-                    <th>
-                        Amount
-                    </th>
-                    <th>
-                        Bank Name
-                    </th>
+                    <th>Amount</th>
+                    <th>Bank Name</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
             </table>
-
             <hr/>
-
             <div>
-
                 <div id="selected_item"></div>
-
                 <div>
                     <button class="btn btn-primary" id="send_beftn_btn">Send EFT</button>
                     <!--                <button class="btn btn-warning" id="hold_items_btn">Hold</button>
@@ -101,12 +101,10 @@
                                         <button class="btn btn-info" id="resend_btn">Resend</button>-->
                 </div>
             </div>
-
         </div>
     </section>
 
-    <div class="modal fade" id="viewLotItemModal" tabindex="-1" aria-hidden="true">
-    </div>
+    <div class="modal fade" id="viewLotItemModal" tabindex="-1" aria-hidden="true"></div>
 
     <div class="modal fade" id="holdLotItemModal" tabindex="-1" aria-hidden="true">
 
@@ -133,12 +131,43 @@
 
     <x-modal-fade id="add_lot_item_modal"></x-modal-fade>
 
+    <div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transfer Lot Items</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="transfer_form">
+                        <input type="hidden" name="current_lot_id" value="{{ $lot->id }}">
+
+                        <div class="form-group">
+                            <label for="target_lot">Select Lot to Transfer To:</label>
+                            <select name="target_lot_id" id="target_lot" class="form-control">
+                                @foreach ($lots as $availableLot)
+                                    @if ($availableLot->id !== $lot->id)
+                                        <option value="{{ $availableLot->id }}">{{ $availableLot->short_name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <p id="selected_items_count">No items selected</p>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Transfer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
-
 @push('scripts')
-
     <script src="{{asset('/adminLTE/plugins/datatables-select/js/dataTables.select.min.js')}}"></script>
-
     <script>
         $(document).ready(function () {
             let table = $('#lotItemsTable').DataTable({
@@ -231,7 +260,7 @@
                 $('#holdLotItemModal').load(url, function () {
                     $(this).modal('show');
 
-                    //then add date picker
+                    // then add date picker
 
                     $('.date-time-picker').datetimepicker({
                         format: 'yyyy-MM-DD HH:mm:ss',
@@ -288,7 +317,6 @@
                 }
 
             })
-
 
             $(document).on('submit', 'form#send_form', function (event) {
                 event.preventDefault();
@@ -405,5 +433,72 @@
             })
 
         })
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('#target_lot').select2({
+                width: '100%',
+                dropdownParent: $('#transferModal')
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            // Open transfer modal when button is clicked
+            $('#transfer_items_btn').click(function () {
+                let selectedItems = getSelectedItems();
+                if (selectedItems.length === 0) {
+                    alert('Please select at least one item to transfer.');
+                    return;
+                }
+                $('#selected_items_count').text(selectedItems.length + ' items selected');
+                $('#transferModal').modal('show');
+            });
+
+            // Get selected items
+            function getSelectedItems() {
+                let values = [];
+                $('#lotItemsTable input.row-select:checked').each(function () {
+                    values.push($(this).val());
+                });
+                return values;
+            }
+
+            // Handle form submission
+            $('#transfer_form').submit(function (event) {
+                event.preventDefault();
+                let targetLotId = $('#target_lot').val();
+                let currentLotId = $('input[name="current_lot_id"]').val();
+                let selectedItems = getSelectedItems();
+
+                if (selectedItems.length === 0) {
+                    alert('No items selected.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/transfer-lot-items',
+                    method: 'POST',
+                    data: {
+                        current_lot_id: currentLotId,
+                        target_lot_id: targetLotId,
+                        items: selectedItems,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            $('#transferModal').modal('hide');
+                            toastr.success(response.message);
+                            $('#lotItemsTable').DataTable().ajax.reload();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('An error occurred while transferring items.');
+                    }
+                });
+            });
+        });
     </script>
 @endpush

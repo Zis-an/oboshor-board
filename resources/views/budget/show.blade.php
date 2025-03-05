@@ -18,6 +18,29 @@
         th:not(:first-child), td:not(:first-child) {
             width: 20%;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+        .drag-handle {
+            cursor: move;
+            margin-right: 8px;
+        }
+
+
+
+
+
+
+
     </style>
 @endpush
 @section('main')
@@ -59,65 +82,195 @@
                         @endif
                     </tr>
                     </thead>
-                    <tbody>
+{{--                    <tbody>--}}
+{{--                    @foreach($currentHeads as $headIndex=>$currentHead)--}}
+{{--                        @if($currentHead->items->contains('status', 1))--}}
+{{--                        <tr>--}}
+{{--                            <td class="text-bold" style="width: 50%">{{$currentHead->name}}</td>--}}
+{{--                            @if(!empty($prevHeads))--}}
+{{--                                <td class="text-right font-weight-bold">{{number_format($prevHeads[$headIndex]->budget->amount ?? 0, 2)}}</td>--}}
+{{--                                @if($type == 'income')--}}
+{{--                                    @php--}}
+{{--                                        $headAmount = $prevHeads[$headIndex]->transactions->sum('amount') ?? 0;--}}
+{{--                                        $totalAmount += $headAmount;--}}
+{{--                                    @endphp--}}
+{{--                                    <td class="text-right font-weight-bold">{{number_format($headAmount, 2)}}</td>--}}
+{{--                                @endif--}}
+{{--                                @if($type == 'expense')--}}
+{{--                                    @php--}}
+{{--                                        $headAmount = $prevHeads[$headIndex]->transactionItems->sum('amount') ?? 0;--}}
+{{--                                        $totalAmount += $headAmount;--}}
+{{--                                    @endphp--}}
+{{--                                    <td class="text-right font-weight-bold">{{number_format($headAmount, 2)}}</td>--}}
+{{--                                @endif--}}
+{{--                            @endif--}}
+{{--                            @php--}}
+{{--                                $totalAmountOfHeadItems = $currentHead->items->sum(function ($item) {--}}
+{{--                                    return $item->budget->amount ?? 0;--}}
+{{--                                });--}}
+{{--                            @endphp--}}
+{{--                            <td class="text-right font-weight-bold">{{number_format($currentHead->budget->amount ?? 0, 2)}}</td>--}}
+{{--                            <td class="text-right font-weight-bold">{{number_format($totalAmountOfHeadItems, 2)}}</td>--}}
+{{--                            <!--<td></td>-->--}}
+{{--                        </tr>--}}
+{{--                        @endif--}}
+{{--                        @foreach($currentHead->items as $index=>$item)--}}
+{{--                            @if($item->status == 1)--}}
+
+{{--                                <tr>--}}
+{{--                                <td style="width: 75%">{{$item->name}}</td>--}}
+{{--                                @if(!empty($prevHeads))--}}
+
+{{--                                    <td class="text-right">{{number_format($prevHeads[$headIndex]['items'][$index]->budget->amount ?? 0, 2)}}</td>--}}
+
+{{--                                    @if($type == 'income')--}}
+{{--                                        <td class="text-right">{{number_format($prevHeads[$headIndex]['items'][$index]->transactions->sum('amount') ?? 0, 2)}}</td>--}}
+{{--                                    @endif--}}
+
+{{--                                    @if($type == 'expense')--}}
+{{--                                        <td class="text-right">{{number_format($prevHeads[$headIndex]['items'][$index]->transactionItems->sum('amount') ?? 0, 2)}}</td>--}}
+{{--                                    @endif--}}
+
+{{--                                @endif--}}
+
+{{--                                <td class="text-right" style="width: 25%">--}}
+{{--                                    {{number_format($item->budget->amount ?? 0, 2)}}--}}
+{{--                                </td>--}}
+{{--                            </tr>--}}
+{{--                            @endif--}}
+{{--                        @endforeach--}}
+{{--                    @endforeach--}}
+{{--                    </tbody>--}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     @foreach($currentHeads as $headIndex=>$currentHead)
                         @if($currentHead->items->contains('status', 1))
-                        <tr>
-                            <td class="text-bold" style="width: 50%">{{$currentHead->name}}</td>
-                            @if(!empty($prevHeads))
-                                <td class="text-right font-weight-bold">{{number_format($prevHeads[$headIndex]->budget->amount ?? 0, 2)}}</td>
-                                @if($type == 'income')
-                                    @php
-                                        $headAmount = $prevHeads[$headIndex]->transactions->sum('amount') ?? 0;
-                                        $totalAmount += $headAmount;
-                                    @endphp
-                                    <td class="text-right font-weight-bold">{{number_format($headAmount, 2)}}</td>
-                                @endif
-                                @if($type == 'expense')
-                                    @php
-                                        $headAmount = $prevHeads[$headIndex]->transactionItems->sum('amount') ?? 0;
-                                        $totalAmount += $headAmount;
-                                    @endphp
-                                    <td class="text-right font-weight-bold">{{number_format($headAmount, 2)}}</td>
-                                @endif
-                            @endif
-                            @php
-                                $totalAmountOfHeadItems = $currentHead->items->sum(function ($item) {
-                                    return $item->budget->amount ?? 0;
-                                });
-                            @endphp
-{{--                            <td class="text-right font-weight-bold">{{number_format($currentHead->budget->amount ?? 0, 2)}}</td>--}}
-                            <td class="text-right font-weight-bold">{{number_format($totalAmountOfHeadItems, 2)}}</td>
-                            <!--<td></td>-->
-                        </tr>
-                        @endif
-                        @foreach($currentHead->items as $index=>$item)
-                            @if($item->status == 1)
-
-                                <tr>
-                                <td style="width: 75%">{{$item->name}}</td>
-                                @if(!empty($prevHeads))
-
-                                    <td class="text-right">{{number_format($prevHeads[$headIndex]['items'][$index]->budget->amount ?? 0, 2)}}</td>
-
-                                    @if($type == 'income')
-                                        <td class="text-right">{{number_format($prevHeads[$headIndex]['items'][$index]->transactions->sum('amount') ?? 0, 2)}}</td>
-                                    @endif
-
-                                    @if($type == 'expense')
-                                        <td class="text-right">{{number_format($prevHeads[$headIndex]['items'][$index]->transactionItems->sum('amount') ?? 0, 2)}}</td>
-                                    @endif
-
-                                @endif
-
-                                <td class="text-right" style="width: 25%">
-                                    {{number_format($item->budget->amount ?? 0, 2)}}
+                            <tbody class="head-group" data-head-id="{{ $currentHead->id }}">
+                            <tr>
+                                <td class="text-bold" style="width: 50%">
+                                    <i class="fas fa-arrows-alt-v drag-handle" style="cursor: move; margin-right: 8px;"></i>
+                                    {{ $currentHead->name }}
                                 </td>
+                                @if(!empty($prevHeads))
+                                    @php
+                                        // Get the previous head using ID lookup
+                                        $prevHead = $prevHeads->get($currentHead->id);
+                                    @endphp
+                                    <td class="text-right font-weight-bold">{{ number_format($prevHead->budget->amount ?? 0, 2) }}</td>
+                                    @if($type == 'income')
+                                        @php
+                                            $headAmount = $prevHead->transactions->sum('amount') ?? 0;
+                                            $totalAmount += $headAmount;
+                                        @endphp
+                                        <td class="text-right font-weight-bold">{{ number_format($headAmount, 2) }}</td>
+                                    @endif
+                                    @if($type == 'expense')
+                                        @php
+                                            $headAmount = $prevHead->transactionItems->sum('amount') ?? 0;
+                                            $totalAmount += $headAmount;
+                                        @endphp
+                                        <td class="text-right font-weight-bold">{{ number_format($headAmount, 2) }}</td>
+                                    @endif
+                                @endif
+                                @php
+                                    $totalAmountOfHeadItems = $currentHead->items->sum(function ($item) {
+                                        return $item->budget->amount ?? 0;
+                                    });
+                                @endphp
+                                <td class="text-right font-weight-bold">{{ number_format($totalAmountOfHeadItems, 2) }}</td>
                             </tr>
+                            @foreach($currentHead->items as $index=>$item)
+                                @if($item->status == 1)
+                                    <tr>
+                                        <td style="width: 75%">{{ $item->name }}</td>
+                                        @if(!empty($prevHeads))
+                                            @php
+                                                $prevItem = $prevHead ? $prevHead->items->firstWhere('id', $item->id) : null;
+                                            @endphp
+                                            <td class="text-right">{{ number_format($prevItem->budget->amount ?? 0, 2) }}</td>
+                                            @if($type == 'income')
+                                                <td class="text-right">{{ number_format($prevItem->transactions->sum('amount') ?? 0, 2) }}</td>
+                                            @endif
+                                            @if($type == 'expense')
+                                                <td class="text-right">{{ number_format($prevItem->transactionItems->sum('amount') ?? 0, 2) }}</td>
+                                            @endif
+                                        @endif
+                                        <td class="text-right" style="width: 25%">
+                                            {{ number_format($item->budget->amount ?? 0, 2) }}
+                                        </td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                            </tbody>
                             @endif
-                        @endforeach
-                    @endforeach
-                    </tbody>
+                            @endforeach
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     <tfoot style="background-color: #eee">
                     <tr class="bg-light">
                         <td>
@@ -150,4 +303,77 @@
             })
         })
     </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var table = document.querySelector('table');
+            var headOrder = [];
+
+            // Initialize headOrder with current order
+            function updateHeadOrder() {
+                headOrder = Array.from(document.querySelectorAll('tbody.head-group'))
+                    .map(tbody => tbody.getAttribute('data-head-id'));
+            }
+
+            // Initialize Sortable
+            Sortable.create(table, {
+                handle: '.drag-handle',
+                draggable: 'tbody.head-group',
+                animation: 150,
+                onEnd: function () {
+                    updateHeadOrder();
+                }
+            });
+
+            // Update export URLs with current order
+            $(document).on('click', '#export_btn_pdf, #export_btn_excel', function (e) {
+                e.preventDefault();
+                const type = $(this).attr('id') === 'export_btn_pdf' ? 'pdf' : 'excel';
+                const order = headOrder.join(',');
+                let url = window.location.pathname + `?export=true&type=${type}&order=${order}`;
+                window.open(url, '_blank');
+            });
+
+            // Initial order setup
+            updateHeadOrder();
+        });
+    </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @endpush

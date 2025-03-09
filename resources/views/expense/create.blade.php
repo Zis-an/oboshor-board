@@ -1,5 +1,4 @@
 @extends('layouts.app')
-
 @section('main')
     <section class="content-header">
         <div class="container-fluid">
@@ -220,6 +219,7 @@
                 </div>
             </div>
         </div>
+
         <div class="card-body">
             <table class="table table-bordered" id="expense-table">
                 <thead>
@@ -241,11 +241,7 @@
                     <td style="width: 20%">
                         {{Form::text('items[0][amount]', '', ['class' => 'form-control td-amount'])}}
                     </td>
-                    <td>
-                        <button class="remove-item-btn btn-sm btn-danger" type="button">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    </td>
+                    <td><button class="remove-item-btn btn-sm btn-danger" type="button"><i class="fa fa-trash"></i></button></td>
                 </tr>
                 </tbody>
                 <tfoot>
@@ -255,11 +251,7 @@
                     <td>
                         {!! Form::text('amount', 0, ['class' => 'form-control', 'id' => 'sub_total', 'readonly']) !!}
                     </td>
-                    <td>
-                        <button class="add-more-btn btn-sm btn-info" type="button">
-                            <i class="fa fa-plus"></i>
-                        </button>
-                    </td>
+                    <td><button class="add-more-btn btn-sm btn-info" type="button"><i class="fa fa-plus"></i></button></td>
                 </tr>
                 </tfoot>
             </table>
@@ -323,23 +315,117 @@
                 calculateTotal();
             })
 
-            $(document).on('click', '.add-more-btn', function () {
-                let lll = $('#expense-table tbody>tr:last')
-                let index = Number($(lll).find('input[name=index]').val()) + 1;
-                let prefix = "items[" + index + "]";
-                let cloned = $(lll).clone().find('input, select')
-                    .each(function (ind, el) {
-                        this.name = this.name.replace(/items\[\d+]/, prefix);
-                        this.value = '';
-                    }).end();
+            // $(document).on('click', '.add-more-btn', function () {
+            //     let lll = $('#expense-table tbody>tr:last');
+            //     let index = Number($(lll).find('input[name=index]').val()) + 1;
+            //     let prefix = "items[" + index + "]";
+            //     let cloned = $(lll).clone().find('input, select')
+            //         .each(function (ind, el) {
+            //             this.name = this.name.replace(/items\[\d+]/, prefix);
+            //             this.value = '';
+            //         }).end();
+            //
+            //     // Fix Select2 dropdown
+            //     cloned.find('.select2-container').remove(); // Remove the old Select2 wrapper
+            //     cloned.find('select').show().select2(); // Reinitialize Select2
+            //
+            //     $('#expense-table').append(cloned)
+            //     $('#expense-table tbody select').select2();
+            //
+            // })
 
-                $('#expense-table').append(cloned)
-            })
 
-            $(document).on('click', '.remove-item-btn', function () {
-                $(this).closest('tr').remove();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            $(document).on("click", ".add-more-btn", function () {
+                let index = $("#expense-table tbody tr").length; // Get the next available index
+                let newRow = `<tr>
+                        <input type="hidden" value="${index}" name="index">
+                        <td style="width: 35%">
+                            <select class="form-control select-expense-head" name="items[${index}][head_id]">
+                                <option value="">Select Expense Head</option>
+                                @foreach($expenseHeads as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                                @endforeach
+                                </select>
+                            </td>
+                            <td style="width: 35%">
+                                <select class="form-control select-expense-head-item" name="items[${index}][head_item_id]">
+                                <option value="">Select Item Head</option>
+                            </select>
+                        </td>
+                        <td style="width: 20%">
+                            <input type="text" class="form-control td-amount" name="items[${index}][amount]" value="">
+                        </td>
+                        <td>
+                            <button class="remove-item-btn btn-sm btn-danger" type="button">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                $("#expense-table tbody").append(newRow);
+            });
+
+            $(document).on("click", ".remove-item-btn", function () {
+                $(this).closest("tr").remove();
+                $("#expense-table tbody tr").each(function (i) {
+                    $(this).find("input, select").each(function () {
+                        let name = $(this).attr("name");
+                        if (name) {
+                            name = name.replace(/\[\d+\]/, `[${i}]`);
+                            $(this).attr("name", name);
+                        }
+                    });
+                });
                 calculateTotal();
-            })
+            });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // $(document).on('click', '.remove-item-btn', function () {
+            //     $(this).closest('tr').remove();
+            //     calculateTotal();
+            // })
 
             function calculateTotal() {
                 let amount = 0;
@@ -347,7 +433,7 @@
                     amount += Number($(el).find('.td-amount').val());
                 })
                 $('#sub_total').val(amount)
-                calculateVatAndAmount()
+                calculateVatAndAmount();
             }
 
             //on select bank
@@ -375,46 +461,31 @@
             })
 
             //on select expense head
-
             $(document).on('change', '.select-expense-head', function () {
-
                 let head = this.value;
-
                 let el = $(this);
-
                 $.ajax({
                     url: `/get-head-items?head_id=${head}`,
                     success: function (data) {
-
                         // Transforms the top-level key of the response object from 'items' to 'results'
                         let options = '<option>Select Item Head</option>';
                         data.map(item => {
                             options += `<option value='${item.id}'>${item.name}</option>`
                         })
-
                         $(el).closest('tr').find('.select-expense-head-item').html(options);
-
                     },
                     error: function () {
-
                     }
                 })
             })
 
             $(document).on('change', '#select_transaction_method', function () {
-
                 let method = this.value;
-
                 $('.transaction-beftn').addClass('d-none');
-
                 $('.transaction-pay-order').addClass('d-none');
-
                 $('.transaction-cheque').addClass('d-none');
-
                 $('#select_expense_bank').removeAttr('disabled')
-
                 $('#select_expense_account').removeAttr('disabled');
-
                 if (method === 'cheque') {
                     $('.transaction-cheque').removeClass('d-none')
                 } else if (method === 'beftn') {
@@ -425,7 +496,6 @@
                     $('#select_expense_bank').attr('disabled', true)
                     $('#select_expense_account').attr('disabled', true);
                 }
-
             })
 
             $(document).on('change', '#vat_percent, #tax_percent', function () {
@@ -433,7 +503,6 @@
             })
 
             function calculateVatAndAmount() {
-
                 let subTotal = parseFloat($('#sub_total').val())
 
                 let percentVat = $('#vat_percent').val() || 0;
@@ -450,6 +519,13 @@
             }
 
         })
+    </script>
 
+    <script>
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Enter" && event.target.tagName !== "TEXTAREA") {
+                event.preventDefault();
+            }
+        });
     </script>
 @endpush

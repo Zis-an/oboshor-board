@@ -19,6 +19,7 @@ use App\Util\CommonUtil;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class ExpenseTransactionController extends ParentController
@@ -81,10 +82,10 @@ class ExpenseTransactionController extends ParentController
                     }
                 })
                 ->addColumn('heads', function ($row) {
-                    return $row->expenseItems->pluck('head.name')->join(',');
+                    return Str::limit($row->expenseItems->pluck('head.name')->join(','), 50);
                 })
                 ->addColumn('sub_heads', function ($row) {
-                    return $row->expenseItems->pluck('headItem.name')->join(',');
+                    return Str::limit($row->expenseItems->pluck('headItem.name')->join(','), 50);
                 })
                 ->rawColumns(['actions', 'status'])
                 ->make(true);
@@ -124,11 +125,8 @@ class ExpenseTransactionController extends ParentController
 
     function store(Request $request)
     {
-
         //$chequeFiles = \request()->has('cheques.0.cheque_file');
-
         //dd($chequeFiles);
-
         //dd($request->all());
 
         \request()->validate([
@@ -152,8 +150,7 @@ class ExpenseTransactionController extends ParentController
                 return $this->respondWithError('Please Select A Bank Account');
             }
         } else {
-            $account = Account::where('is_cash_account', 1)
-                ->firstOrFail();
+            $account = Account::where('is_cash_account', 1)->firstOrFail();
             $accountId = $account->id;
         }
 
@@ -206,11 +203,8 @@ class ExpenseTransactionController extends ParentController
         $data['status'] = $status;
 
         try {
-
             $data['voucher_no'] = (new CommonUtil())->generateInvoiceNumber('transaction', 'V', true, '');
-
             $transaction = Transaction::create($data);
-
             foreach (\request()->items as $item) {
                 TransactionItem::create([
                     'transaction_id' => $transaction->id,
@@ -228,11 +222,8 @@ class ExpenseTransactionController extends ParentController
 
             if ($transactionMethod == 'cheque') {
                 $cheques = $request->input('cheques');
-//                dd($cheques);
                 foreach ($cheques as $index => $cheque) {
-
                     $files = (new FileService())->upload($request, 'cheques.'. $index . '.cheque_file');
-
                     $chequeData = [
                         'transaction_id' => $transaction->id,
                         'account_id' => $accountId,
@@ -265,24 +256,15 @@ class ExpenseTransactionController extends ParentController
 
     function edit($id)
     {
-
-        $expense = Transaction::with(['expenseItems.head', 'account', 'expenseItems.dependentSubHeads'])
-            ->findOrFail($id);
-
+        $expense = Transaction::with(['expenseItems.head', 'account', 'expenseItems.dependentSubHeads'])->findOrFail($id);
+        // dd($expense);
         $expenseHeads = Head::pluck('name', 'id');
-
         $banks = Bank::pluck('name', 'id');
-
         $amountAfterTax = $expense->amount - ($expense->vat + $expense->tax);
-
         $vatPercent = ($expense->vat / $expense->amount) * 100;
         $taxPercent = ($expense->tax / $expense->amount) * 100;
-
-        $serviceProviders = Contact::where('type', 'service-provider')
-            ->pluck('name', 'id');
-
+        $serviceProviders = Contact::where('type', 'service-provider')->pluck('name', 'id');
         $accounts = Account::getAccounts();
-
         return view('expense.edit', compact('expense', 'expenseHeads', 'banks', 'accounts',
             'serviceProviders', 'vatPercent', 'taxPercent', 'amountAfterTax'))
             ->with(['methods' => $this->transactionMethods]);
